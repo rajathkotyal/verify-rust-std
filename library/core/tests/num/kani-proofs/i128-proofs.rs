@@ -1,23 +1,50 @@
 #[cfg(kani)]
 mod verification {
-   // use super::*;
+    // use super::*;
 
-   #[kani::proof]
-   fn verify_i128_unchecked_add() {
-       let num1: i128 = kani::any::<i128>();
-       let num2: i128 = kani::any::<i128>();
+    #[kani::proof]
+    fn verify_i128_unchecked_add() {
+        let num1: i128 = kani::any::<i128>();
+        let num2: i128 = kani::any::<i128>();
 
-       // Safety preconditions:
-       // - Positive number addition won't overflow
-       // - Negative number addition won't underflow
-       // Addition of two integers with different signs never overflows
-       // Undefined behavior occurs when overflow or underflow happens
-       kani::assume((num1 > 0 && num2 > 0 && num1 < i128::MAX - num2)
-                    || (num1 < 0 && num2 < 0 && num1 > i128::MIN - num2));
+        // Safety preconditions:
+        // - Positive number addition won't overflow
+        // - Negative number addition won't underflow
+        // Addition of two integers with different signs never overflows
+        // Undefined behavior occurs when overflow or underflow happens
+        kani::assume(
+            (num1 > 0 && num2 > 0 && num1 < i128::MAX - num2)
+                || (num1 < 0 && num2 < 0 && num1 > i128::MIN - num2),
+        );
 
         unsafe {
             let result = num1.unchecked_add(num2);
             assert_eq!(Some(result), num1.checked_add(num2));
         }
-   }
+    }
+
+    #[kani::proof]
+    fn verify_i128_unchecked_sub() {
+        // TODO
+    }
+
+    #[kani::proof]
+    fn verify_i128_unchecked_mul() {
+        // TODO
+    }
+
+    #[kani::proof]
+    fn verify_i128_unchecked_shl() {
+        // TODO
+    }
+
+    #[kani::proof]
+    fn verify_i128_unchecked_shr() {
+        // TODO
+    }
+
+    #[kani::proof]
+    fn verify_i128_unchecked_neg() {
+        // TODO
+    }
 }
