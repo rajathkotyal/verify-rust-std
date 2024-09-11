@@ -1,3 +1,4 @@
+#![feature(unchecked_shifts)]
 #[cfg(kani)]
 mod verification {
     // use super::*;
@@ -35,7 +36,16 @@ mod verification {
 
     #[kani::proof]
     fn verify_i16_unchecked_shl() {
-        // TODO
+        let num: i16 = kani::any::<i16>(); // Any value in type i16
+        let shift_amount: u32 = kani::any::<u32>(); // Any shift amount in type u32
+    
+        // Assume the shift value is smaller than 16 because i16 only has 16 bits
+        kani::assume(shift_amount < 16);
+    
+        unsafe {
+            let result = num.unchecked_shl(shift_amount);
+            assert_eq!(Some(result), num.checked_shl(shift_amount));
+        }
     }
 
     #[kani::proof]
