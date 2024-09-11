@@ -1,3 +1,4 @@
+#![feature(unchecked_shifts)]
 #[cfg(kani)]
 mod verification {
     // use super::*;
@@ -35,7 +36,16 @@ mod verification {
 
     #[kani::proof]
     fn verify_i8_unchecked_shl() {
-        // TODO
+        let num: i8 = kani::any::<i8>(); // Any value in type i8
+        let shift_amount: u32 = kani::any::<u32>(); // Any shift amount in type u32
+
+        // Assume the shift value is smaller than 8 because i8 only has 8 digits
+        kani::assume(shift_amount < 8);
+
+        unsafe {
+            let result = num.unchecked_shl(shift_amount);
+            assert_eq!(Some(result), num.checked_shl(shift_amount));
+        }
     }
 
     #[kani::proof]
