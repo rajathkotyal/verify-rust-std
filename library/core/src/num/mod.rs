@@ -1580,3 +1580,63 @@ from_str_radix_size_impl! { i16 isize, u16 usize }
 from_str_radix_size_impl! { i32 isize, u32 usize }
 #[cfg(target_pointer_width = "64")]
 from_str_radix_size_impl! { i64 isize, u64 usize }
+
+
+// #[feature(unchecked_math)]
+#[cfg(kani)]
+use crate::kani;
+
+#[unstable(feature = "kani", issue = "none")]
+mod verify {
+    use super::*;
+
+    // Signed unchecked_add Safety preconditions:
+    // - Positive number addition won't overflow
+    // - Negative number addition won't underflow
+    // Addition of two integers with different signs never overflows
+    // Undefined behavior occurs when overflow or underflow happens
+    #[kani::requires(!num1.overflowing_add(num2).1)]
+    #[kani::ensures(|ret| *ret >= i8::MIN && *ret <= i8::MAX)]
+    fn i8_unchecked_add_wrapper(num1: i8, num2: i8) -> i8 {
+        unsafe { num1.unchecked_add(num2) }
+    }
+
+    // pub const unsafe fn unchecked_add(self, rhs: Self) -> Self
+    #[kani::proof_for_contract(i8_unchecked_add_wrapper)]
+    pub fn check_unchecked_add_i8() {
+        let num1: i8 = kani::any::<i8>();
+        let num2: i8 = kani::any::<i8>();
+        
+        // kani::assume(
+        //     (num1 > 0 && num2 > 0 && num1 < i8::MAX - num2)
+        //         || (num1 < 0 && num2 < 0 && num1 > i8::MIN - num2),
+        // );
+
+        unsafe {
+            // Kani ensures the inputs satisfy preconditions
+            i8_unchecked_add_wrapper(num1, num2);
+            // Kani ensures the output satisfy postconditions
+        }
+    }
+
+    // pub const unsafe fn unchecked_add(self, rhs: Self) -> Self
+    #[kani::proof]
+    pub fn check_unchecked_add_i16() {
+        let num1: i16 = kani::any::<i16>();
+        let num2: i16 = kani::any::<i16>();
+        
+        // overflowing_add return (result, bool) where bool is if
+        // add will overflow. This check takes the boolean. 
+        kani::assume(!num1.overflowing_add(num2).1);
+
+        unsafe {
+            let result = num1.unchecked_add(num2);
+
+            // Either check result
+            assert_eq!(Some(result), num1.checked_add(num2));
+            
+            // Or check range of result
+            assert!(result >= i16::MIN && result <= i16::MAX);
+        }
+    }
+}
