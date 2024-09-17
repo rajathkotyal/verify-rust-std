@@ -3600,3 +3600,17 @@ macro_rules! int_impl {
         }
     }
 }
+
+#[cfg(kani)]
+#[unstable(feature="kani", issue="none")]
+use crate::kani;
+mod verify {
+    use super::*;
+    fn verify_unchecked_neg() {
+        let x: i8 = kani::any();
+        kani::assume(x != i8::MIN);
+
+        let result: i8 = unsafe{x.unchecked_neg()};
+        assert_eq!(result, -x);
+    }
+}
