@@ -1593,16 +1593,27 @@ use crate::kani;
 mod verify {
     use super::*;
 
-    // Signed unchecked_add Safety preconditions:
-    // - Positive number addition won't overflow
-    // - Negative number addition won't underflow
-    // Addition of two integers with different signs never overflows
-    // Undefined behavior occurs when overflow or underflow happens
+    // `unchecked_add` proofs
+    //
     // Target contracts:
     // #[kani::requires(!self.overflowing_add(rhs).1)]
     // #[kani::ensures(|ret| *ret >= $SelfT::MIN && *ret <= $SelfT::MAX)]
-
+    // 
+    // Target function:
     // pub const unsafe fn unchecked_add(self, rhs: Self) -> Self
+    // 
+    // Safety preconditions:
+    // 1. Signed integers (i8, i16, i32, i64, i128):
+    //  - Positive number addition won't overflow
+    //  - Negative number addition won't underflow
+    // Addition of two integers with different signs never overflows
+    // Undefined behavior occurs when overflow or underflow happens
+    // 
+    // 2. Unsigned integers (u8, u16, u32, u64, u128):
+    //  - Addition won't overflow
+    // Unsigned integers are always positive, so underflow won't happen
+    // Undefined behavior occurs when overflow happens
+
     #[kani::proof_for_contract(i8::unchecked_add)]
     pub fn check_unchecked_add_i8() {
         let num1: i8 = kani::any::<i8>();
