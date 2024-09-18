@@ -1397,7 +1397,10 @@ const fn from_str_radix_panic_ct(_radix: u32) -> ! {
 
 #[track_caller]
 fn from_str_radix_panic_rt(radix: u32) -> ! {
-    panic!("from_str_radix_int: must lie in the range `[2, 36]` - found {}", radix);
+    panic!(
+        "from_str_radix_int: must lie in the range `[2, 36]` - found {}",
+        radix
+    );
 }
 
 #[cfg_attr(not(feature = "panic_immediate_abort"), inline(never))]
@@ -1582,7 +1585,6 @@ from_str_radix_size_impl! { i32 isize, u32 usize }
 #[cfg(target_pointer_width = "64")]
 from_str_radix_size_impl! { i64 isize, u64 usize }
 
-
 // #[feature(unchecked_math)]
 #[cfg(kani)]
 use crate::kani;
@@ -1596,6 +1598,9 @@ mod verify {
     // - Negative number addition won't underflow
     // Addition of two integers with different signs never overflows
     // Undefined behavior occurs when overflow or underflow happens
+    // Target contracts:
+    // #[kani::requires(!self.overflowing_add(rhs).1)]
+    // #[kani::ensures(|ret| *ret >= $SelfT::MIN && *ret <= $SelfT::MAX)]
 
     // pub const unsafe fn unchecked_add(self, rhs: Self) -> Self
     #[kani::proof_for_contract(i8::unchecked_add)]
