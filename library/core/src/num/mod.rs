@@ -1662,4 +1662,54 @@ mod verify {
             num1.unchecked_add(num2);
         }
     }
+
+    #[kani::proof_for_contract(u8::unchecked_add)]
+    pub fn check_unchecked_add_u8() {
+        let num1: u8 = kani::any::<u8>();
+        let num2: u8 = kani::any::<u8>();
+
+        unsafe {
+            num1.unchecked_add(num2);
+        }
+    }
+
+    #[kani::proof_for_contract(u16::unchecked_add)]
+    pub fn check_unchecked_add_u16() {
+        let num1: u16 = kani::any::<u16>();
+        let num2: u16 = kani::any::<u16>();
+
+        unsafe {
+            num1.unchecked_add(num2);
+        }
+    }
+
+    #[kani::proof_for_contract(u32::unchecked_add)]
+    pub fn check_unchecked_add_u32() {
+        let num1: u32 = kani::any::<u32>();
+        let num2: u32 = kani::any::<u32>();
+
+        unsafe {
+            num1.unchecked_add(num2);
+        }
+    }
+
+    #[kani::proof_for_contract(u64::unchecked_add)]
+    pub fn check_unchecked_add_u64() {
+        let num1: u64 = kani::any::<u64>();
+        let num2: u64 = kani::any::<u64>();
+
+        unsafe {
+            num1.unchecked_add(num2);
+        }
+    }
+
+    #[kani::proof_for_contract(u128::unchecked_add)]
+    pub fn check_unchecked_add_u128() {
+        let num1: u128 = kani::any::<u128>();
+        let num2: u128 = kani::any::<u128>();
+
+        unsafe {
+            num1.unchecked_add(num2);
+        }
+    }
 }
