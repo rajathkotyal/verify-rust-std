@@ -1585,7 +1585,6 @@ from_str_radix_size_impl! { i32 isize, u32 usize }
 #[cfg(target_pointer_width = "64")]
 from_str_radix_size_impl! { i64 isize, u64 usize }
 
-// #[feature(unchecked_math)]
 #[cfg(kani)]
 use crate::kani;
 
@@ -1598,17 +1597,17 @@ mod verify {
     // Target contracts:
     // #[kani::requires(!self.overflowing_add(rhs).1)]
     // #[kani::ensures(|ret| *ret >= $SelfT::MIN && *ret <= $SelfT::MAX)]
-    // 
+    //
     // Target function:
     // pub const unsafe fn unchecked_add(self, rhs: Self) -> Self
-    // 
+    //
     // Safety preconditions:
     // 1. Signed integers (i8, i16, i32, i64, i128):
     //  - Positive number addition won't overflow
     //  - Negative number addition won't underflow
     // Addition of two integers with different signs never overflows
     // Undefined behavior occurs when overflow or underflow happens
-    // 
+    //
     // 2. Unsigned integers (u8, u16, u32, u64, u128):
     //  - Addition won't overflow
     // Unsigned integers are always positive, so underflow won't happen
@@ -1618,6 +1617,46 @@ mod verify {
     pub fn check_unchecked_add_i8() {
         let num1: i8 = kani::any::<i8>();
         let num2: i8 = kani::any::<i8>();
+
+        unsafe {
+            num1.unchecked_add(num2);
+        }
+    }
+
+    #[kani::proof_for_contract(i16::unchecked_add)]
+    pub fn check_unchecked_add_i16() {
+        let num1: i16 = kani::any::<i16>();
+        let num2: i16 = kani::any::<i16>();
+
+        unsafe {
+            num1.unchecked_add(num2);
+        }
+    }
+
+    #[kani::proof_for_contract(i32::unchecked_add)]
+    pub fn check_unchecked_add_i32() {
+        let num1: i32 = kani::any::<i32>();
+        let num2: i32 = kani::any::<i32>();
+
+        unsafe {
+            num1.unchecked_add(num2);
+        }
+    }
+
+    #[kani::proof_for_contract(i64::unchecked_add)]
+    pub fn check_unchecked_add_i64() {
+        let num1: i64 = kani::any::<i64>();
+        let num2: i64 = kani::any::<i64>();
+
+        unsafe {
+            num1.unchecked_add(num2);
+        }
+    }
+
+    #[kani::proof_for_contract(i128::unchecked_add)]
+    pub fn check_unchecked_add_i128() {
+        let num1: i128 = kani::any::<i128>();
+        let num2: i128 = kani::any::<i128>();
 
         unsafe {
             num1.unchecked_add(num2);
