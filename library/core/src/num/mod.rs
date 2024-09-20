@@ -5,6 +5,10 @@
 use crate::str::FromStr;
 use crate::ub_checks::assert_unsafe_precondition;
 use crate::{ascii, intrinsics, mem};
+use safety::{ensures, requires};
+
+#[cfg(kani)]
+use crate::kani;
 
 // Used because the `?` operator is not allowed in a const context.
 macro_rules! try_opt {
@@ -1584,9 +1588,6 @@ from_str_radix_size_impl! { i16 isize, u16 usize }
 from_str_radix_size_impl! { i32 isize, u32 usize }
 #[cfg(target_pointer_width = "64")]
 from_str_radix_size_impl! { i64 isize, u64 usize }
-
-#[cfg(kani)]
-use crate::kani;
 
 #[unstable(feature = "kani", issue = "none")]
 mod verify {
