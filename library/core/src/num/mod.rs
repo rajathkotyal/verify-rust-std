@@ -1599,8 +1599,8 @@ mod verify {
     // i{8,16,32,64,128} and u{8,16,32,64,128} -- 10 types in total
     //
     // Target contracts:
-    // #[kani::requires(!self.overflowing_add(rhs).1)]
-    // #[kani::ensures(|ret| *ret >= $SelfT::MIN && *ret <= $SelfT::MAX)]
+    // #[requires(!self.overflowing_add(rhs).1)]
+    // #[ensures(|ret| *ret >= $SelfT::MIN && *ret <= $SelfT::MAX)]
     //
     // Target function:
     // pub const unsafe fn unchecked_add(self, rhs: Self) -> Self
