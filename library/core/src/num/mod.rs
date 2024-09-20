@@ -1601,17 +1601,8 @@ mod verify {
     // Target function:
     // pub const unsafe fn unchecked_add(self, rhs: Self) -> Self
     //
-    // Safety preconditions:
-    // 1. Signed integers (i8, i16, i32, i64, i128):
-    //  - Positive number addition won't overflow
-    //  - Negative number addition won't underflow
-    // Addition of two integers with different signs never overflows
-    // Undefined behavior occurs when overflow or underflow happens
-    //
-    // 2. Unsigned integers (u8, u16, u32, u64, u128):
-    //  - Addition won't overflow
-    // Unsigned integers are always positive, so underflow won't happen
-    // Undefined behavior occurs when overflow happens
+    // Target types:
+    // i{8,16,32,64,128} and u{8,16,32,64,128} -- 10 types in total
 
     #[kani::proof_for_contract(i8::unchecked_add)]
     pub fn check_unchecked_add_i8() {
