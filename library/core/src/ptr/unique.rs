@@ -2,6 +2,7 @@ use safety::{ensures, requires};
 use crate::fmt;
 use crate::marker::{PhantomData, Unsize};
 use crate::ops::{CoerceUnsized, DispatchFromDyn};
+use crate::pin::PinCoerceUnsized;
 use crate::ptr::NonNull;
 
 #[cfg(kani)]
@@ -176,6 +177,9 @@ impl<T: ?Sized, U: ?Sized> CoerceUnsized<Unique<U>> for Unique<T> where T: Unsiz
 #[unstable(feature = "ptr_internals", issue = "none")]
 impl<T: ?Sized, U: ?Sized> DispatchFromDyn<Unique<U>> for Unique<T> where T: Unsize<U> {}
 
+#[unstable(feature = "pin_coerce_unsized_trait", issue = "123430")]
+unsafe impl<T: ?Sized> PinCoerceUnsized for Unique<T> {}
+
 #[unstable(feature = "ptr_internals", issue = "none")]
 impl<T: ?Sized> fmt::Debug for Unique<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -280,8 +284,8 @@ mod verify {
     }
 
     // pub const fn cast<U>(self) -> Unique<U>
-    #[kani::proof_for_contract(Unique::cast<U>)]
-    pub fn check_cast<U>() {
+    #[kani::proof]
+    pub fn check_cast() {
         let mut x : i32 = kani::any();
         let xptr = &mut x;
         unsafe {
