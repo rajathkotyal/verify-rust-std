@@ -752,6 +752,8 @@ macro_rules! uint_impl {
                       without modifying the original"]
         #[inline(always)]
         #[cfg_attr(miri, track_caller)] // even without panics, this helps for Miri backtraces
+        #[requires(!self.overflowing_sub(rhs).1)] // Preconditions: No overflow should occur
+        #[ensures(|ret| *ret >= Self::MIN && *ret <= Self::MAX)] // Postconditions: Result must be within valid bounds
         pub const unsafe fn unchecked_sub(self, rhs: Self) -> Self {
             assert_unsafe_precondition!(
                 check_language_ub,
