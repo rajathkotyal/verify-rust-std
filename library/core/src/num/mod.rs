@@ -1703,4 +1703,111 @@ mod verify {
             num1.unchecked_add(num2);
         }
     }
+
+
+    // `unchecked_sub` proofs
+    //
+    // Target types:
+    // i{8,16,32,64,128} and u{8,16,32,64,128} -- 10 types in total
+    //
+    // Target contracts:
+    //#[requires(!self.overflowing_sub(rhs).1)] // Preconditions: No overflow should occur
+    //#[ensures(|ret| *ret >= Self::MIN && *ret <= Self::MAX)] // Postconditions: Result must be within valid bounds
+    //
+    // Target function:
+    // pub const unsafe fn unchecked_sub(self, rhs: Self) -> Self
+
+    #[kani::proof_for_contract(i8::unchecked_sub)]
+    pub fn check_unchecked_sub_i8() {
+        let num1: i8 = kani::any::<i8>();
+        let num2: i8 = kani::any::<i8>();
+        unsafe {
+            num1.unchecked_sub(num2);
+        }
+    }
+    
+    #[kani::proof_for_contract(i16::unchecked_sub)]
+    pub fn check_unchecked_sub_i16() {
+        let num1: i16 = kani::any::<i16>();
+        let num2: i16 = kani::any::<i16>();
+        unsafe {
+            num1.unchecked_sub(num2);
+        }
+    }
+    
+    #[kani::proof_for_contract(i32::unchecked_sub)]
+    pub fn check_unchecked_sub_i32() {
+        let num1: i32 = kani::any::<i32>();
+        let num2: i32 = kani::any::<i32>();
+        unsafe {
+            num1.unchecked_sub(num2);
+        }
+    }
+    
+    #[kani::proof_for_contract(i64::unchecked_sub)]
+    pub fn check_unchecked_sub_i64() {
+        let num1: i64 = kani::any::<i64>();
+        let num2: i64 = kani::any::<i64>();
+        unsafe {
+            num1.unchecked_sub(num2);
+        }
+    }
+    
+    #[kani::proof_for_contract(i128::unchecked_sub)]
+    pub fn check_unchecked_sub_i128() {
+        let num1: i128 = kani::any::<i128>();
+        let num2: i128 = kani::any::<i128>();
+        unsafe {
+            num1.unchecked_sub(num2);
+        }
+    }
+    
+    #[kani::proof_for_contract(u8::unchecked_sub)]
+    pub fn check_unchecked_sub_u8() {
+        let num1: u8 = kani::any::<u8>();
+        let num2: u8 = kani::any::<u8>();
+        unsafe {
+            num1.unchecked_sub(num2);
+        }
+    }
+    
+    #[kani::proof_for_contract(u16::unchecked_sub)]
+    pub fn check_unchecked_sub_u16() {
+        let num1: u16 = kani::any::<u16>();
+        let num2: u16 = kani::any::<u16>();
+        unsafe {
+            num1.unchecked_sub(num2);
+        }
+    }
+    
+    #[kani::proof_for_contract(u32::unchecked_sub)]
+    pub fn check_unchecked_sub_u32() {
+        let num1: u32 = kani::any::<u32>();
+        let num2: u32 = kani::any::<u32>();
+        unsafe {
+            num1.unchecked_sub(num2);
+        }
+    }
+    
+    #[kani::proof_for_contract(u64::unchecked_sub)]
+    pub fn check_unchecked_sub_u64() {
+        let num1: u64 = kani::any::<u64>();
+        let num2: u64 = kani::any::<u64>();
+        unsafe {
+            num1.unchecked_sub(num2);
+        }
+    }
+    
+    #[kani::proof_for_contract(u128::unchecked_sub)]
+    pub fn check_unchecked_sub_u128() {
+        let num1: u128 = kani::any::<u128>();
+        let num2: u128 = kani::any::<u128>();
+        unsafe {
+            num1.unchecked_sub(num2);
+        }
+    }
+    
+
+
+    
 }
