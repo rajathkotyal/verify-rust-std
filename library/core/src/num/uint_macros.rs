@@ -1488,6 +1488,8 @@ macro_rules! uint_impl {
         #[rustc_const_unstable(feature = "unchecked_shifts", issue = "85122")]
         #[inline(always)]
         #[cfg_attr(miri, track_caller)] // even without panics, this helps for Miri backtraces
+        #[requires(rhs < Self::BITS)]
+        #[ensures(|ret| *ret >= Self::MIN && *ret <= Self::MAX)]
         pub const unsafe fn unchecked_shl(self, rhs: u32) -> Self {
             assert_unsafe_precondition!(
                 check_language_ub,
