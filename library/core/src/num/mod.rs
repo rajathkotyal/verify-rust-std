@@ -1401,10 +1401,7 @@ const fn from_str_radix_panic_ct(_radix: u32) -> ! {
 
 #[track_caller]
 fn from_str_radix_panic_rt(radix: u32) -> ! {
-    panic!(
-        "from_str_radix_int: must lie in the range `[2, 36]` - found {}",
-        radix
-    );
+    panic!("from_str_radix_int: must lie in the range `[2, 36]` - found {}", radix);
 }
 
 #[cfg_attr(not(feature = "panic_immediate_abort"), inline(never))]
