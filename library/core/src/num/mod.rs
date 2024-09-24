@@ -1593,11 +1593,10 @@ mod verify {
     // `unchecked_add` proofs
     //
     // Target types:
-    // i{8,16,32,64,128} and u{8,16,32,64,128} -- 10 types in total
+    // i{8,16,32,64,128, size} and u{8,16,32,64,128, size} -- 12 types in total
     //
     // Target contracts:
     // #[requires(!self.overflowing_add(rhs).1)]
-    // #[ensures(|ret| *ret >= $SelfT::MIN && *ret <= $SelfT::MAX)]
     //
     // Target function:
     // pub const unsafe fn unchecked_add(self, rhs: Self) -> Self
@@ -1651,6 +1650,16 @@ mod verify {
         }
     }
 
+    #[kani::proof_for_contract(isize::unchecked_add)]
+    pub fn check_unchecked_add_isize() {
+        let num1: isize = kani::any::<isize>();
+        let num2: isize = kani::any::<isize>();
+
+        unsafe {
+            num1.unchecked_add(num2);
+        }
+    }
+
     #[kani::proof_for_contract(u8::unchecked_add)]
     pub fn check_unchecked_add_u8() {
         let num1: u8 = kani::any::<u8>();
@@ -1695,6 +1704,16 @@ mod verify {
     pub fn check_unchecked_add_u128() {
         let num1: u128 = kani::any::<u128>();
         let num2: u128 = kani::any::<u128>();
+
+        unsafe {
+            num1.unchecked_add(num2);
+        }
+    }
+
+    #[kani::proof_for_contract(usize::unchecked_add)]
+    pub fn check_unchecked_add_usize() {
+        let num1: usize = kani::any::<usize>();
+        let num2: usize = kani::any::<usize>();
 
         unsafe {
             num1.unchecked_add(num2);
