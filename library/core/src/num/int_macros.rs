@@ -3606,7 +3606,17 @@ macro_rules! int_impl {
 use crate::kani;
 mod verify {
     use super::*;
-    fn verify_unchecked_neg() {
+
+    //#[kani::requires(!num1.overflowing_add(num2).1)]
+    // #[kani::ensures(|ret| *ret >= i8::MIN && *ret <= i8::MAX)]
+    // fn i8_unchecked_neg_wrapper(num1: i8) -> i8 {
+    //     unsafe { num1.unchecked_neg() }
+    // }
+
+
+    // #[kani::proof_for_contract(i8_unchecked_neg_wrapper)]
+    #[kani::proof]
+    pub fn verify_unchecked_neg() {
         let x: i8 = kani::any();
         kani::assume(x != i8::MIN);
 
