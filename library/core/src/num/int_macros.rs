@@ -1425,7 +1425,7 @@ macro_rules! int_impl {
         #[must_use = "this returns the result of the operation, \
                       without modifying the original"]
         #[rustc_const_unstable(feature = "unchecked_shifts", issue = "85122")]
-        #[inline(always)]0
+        #[inline(always)]
         #[cfg_attr(miri, track_caller)] // even without panics, this helps for Miri backtraces
         #[requires(rhs < <$ActualT>::BITS)] // i.e. requires the right hand side of the shift (rhs) to be less than the number of bits in the type. This prevents undefined behavior.
         #[ensures(|ret| *ret >= $SelfT::MIN && *ret <= $SelfT::MAX)] // ensures result is within range after bit shift
