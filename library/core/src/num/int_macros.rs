@@ -3616,11 +3616,47 @@ mod verify {
 
     // #[kani::proof_for_contract(i8_unchecked_neg_wrapper)]
     #[kani::proof]
-    pub fn verify_unchecked_neg() {
+    pub fn check_unchecked_neg_i8() {
         let x: i8 = kani::any();
         kani::assume(x != i8::MIN);
 
         let result: i8 = unsafe{x.unchecked_neg()};
+        assert_eq!(result, -x);
+    }
+
+    #[kani::proof]
+    pub fn check_unchecked_neg_i16() {
+        let x: i16 = kani::any();
+        kani::assume(x != i16::MIN);
+
+        let result: i16 = unsafe{x.unchecked_neg()};
+        assert_eq!(result, -x);
+    }
+
+    #[kani::proof]
+    pub fn check_unchecked_neg_i32() {
+        let x: i32 = kani::any();
+        kani::assume(x != i32::MIN);
+
+        let result: i32 = unsafe{x.unchecked_neg()};
+        assert_eq!(result, -x);
+    }
+
+    #[kani::proof]
+    pub fn check_unchecked_neg_i64() {
+        let x: i64 = kani::any();
+        kani::assume(x != i64::MIN);
+
+        let result: i64 = unsafe{x.unchecked_neg()};
+        assert_eq!(result, -x);
+    }
+
+    #[kani::proof]
+    pub fn check_unchecked_neg_i128() {
+        let x: i128 = kani::any();
+        kani::assume(x != i128::MIN);
+
+        let result: i128 = unsafe{x.unchecked_neg()};
         assert_eq!(result, -x);
     }
 }
