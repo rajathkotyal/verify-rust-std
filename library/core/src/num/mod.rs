@@ -1586,9 +1586,51 @@ from_str_radix_size_impl! { i32 isize, u32 usize }
 #[cfg(target_pointer_width = "64")]
 from_str_radix_size_impl! { i64 isize, u64 usize }
 
+#[cfg(kani)]
 #[unstable(feature = "kani", issue = "none")]
 mod verify {
     use super::*;
+
+    macro_rules! generate_unchecked_math_harness {
+        ($type:ty, $method:ident, $harness_name:ident) => {
+            #[kani::proof_for_contract($type::$method)]
+            pub fn $harness_name() {
+                let num1: $type = kani::any::<$type>();
+                let num2: $type = kani::any::<$type>();
+
+                unsafe {
+                    num1.$method(num2);
+                }
+            }
+        }
+    }
+
+    macro_rules! generate_unchecked_shift_harness {
+        ($type:ty, $method:ident, $harness_name:ident) => {
+            #[kani::proof_for_contract($type::$method)]
+            pub fn $harness_name() {
+                let num1: $type = kani::any::<$type>();
+                let num2: u32 = kani::any::<u32>();
+
+                unsafe {
+                    num1.$method(num2);
+                }
+            }
+        }
+    }
+
+    macro_rules! generate_unchecked_neg_harness {
+        ($type:ty, $method:ident, $harness_name:ident) => {
+            #[kani::proof_for_contract($type::$method)]
+            pub fn $harness_name() {
+                let num1: $type = kani::any::<$type>();
+
+                unsafe {
+                    num1.$method();
+                }
+            }
+        }
+    }
 
     // `unchecked_add` proofs
     //
@@ -1600,123 +1642,16 @@ mod verify {
     //
     // Target function:
     // pub const unsafe fn unchecked_add(self, rhs: Self) -> Self
-    #[kani::proof_for_contract(i8::unchecked_add)]
-    pub fn check_unchecked_add_i8() {
-        let num1: i8 = kani::any::<i8>();
-        let num2: i8 = kani::any::<i8>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-    #[kani::proof_for_contract(i16::unchecked_add)]
-    pub fn check_unchecked_add_i16() {
-        let num1: i16 = kani::any::<i16>();
-        let num2: i16 = kani::any::<i16>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-    #[kani::proof_for_contract(i32::unchecked_add)]
-    pub fn check_unchecked_add_i32() {
-        let num1: i32 = kani::any::<i32>();
-        let num2: i32 = kani::any::<i32>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-    #[kani::proof_for_contract(i64::unchecked_add)]
-    pub fn check_unchecked_add_i64() {
-        let num1: i64 = kani::any::<i64>();
-        let num2: i64 = kani::any::<i64>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-    #[kani::proof_for_contract(i128::unchecked_add)]
-    pub fn check_unchecked_add_i128() {
-        let num1: i128 = kani::any::<i128>();
-        let num2: i128 = kani::any::<i128>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-    #[kani::proof_for_contract(isize::unchecked_add)]
-    pub fn check_unchecked_add_isize() {
-        let num1: isize = kani::any::<isize>();
-        let num2: isize = kani::any::<isize>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-    #[kani::proof_for_contract(u8::unchecked_add)]
-    pub fn check_unchecked_add_u8() {
-        let num1: u8 = kani::any::<u8>();
-        let num2: u8 = kani::any::<u8>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-    #[kani::proof_for_contract(u16::unchecked_add)]
-    pub fn check_unchecked_add_u16() {
-        let num1: u16 = kani::any::<u16>();
-        let num2: u16 = kani::any::<u16>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-    #[kani::proof_for_contract(u32::unchecked_add)]
-    pub fn check_unchecked_add_u32() {
-        let num1: u32 = kani::any::<u32>();
-        let num2: u32 = kani::any::<u32>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-    #[kani::proof_for_contract(u64::unchecked_add)]
-    pub fn check_unchecked_add_u64() {
-        let num1: u64 = kani::any::<u64>();
-        let num2: u64 = kani::any::<u64>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-    #[kani::proof_for_contract(u128::unchecked_add)]
-    pub fn check_unchecked_add_u128() {
-        let num1: u128 = kani::any::<u128>();
-        let num2: u128 = kani::any::<u128>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-    #[kani::proof_for_contract(usize::unchecked_add)]
-    pub fn check_unchecked_add_usize() {
-        let num1: usize = kani::any::<usize>();
-        let num2: usize = kani::any::<usize>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
+    generate_unchecked_math_harness!(i8, unchecked_add, checked_unchecked_add_i8);
+    generate_unchecked_math_harness!(i16, unchecked_add, checked_unchecked_add_i16);
+    generate_unchecked_math_harness!(i32, unchecked_add, checked_unchecked_add_i32);
+    generate_unchecked_math_harness!(i64, unchecked_add, checked_unchecked_add_i64);
+    generate_unchecked_math_harness!(i128, unchecked_add, checked_unchecked_add_i128);
+    generate_unchecked_math_harness!(isize, unchecked_add, checked_unchecked_add_isize);
+    generate_unchecked_math_harness!(u8, unchecked_add, checked_unchecked_add_u8);
+    generate_unchecked_math_harness!(u16, unchecked_add, checked_unchecked_add_u16);
+    generate_unchecked_math_harness!(u32, unchecked_add, checked_unchecked_add_u32);
+    generate_unchecked_math_harness!(u64, unchecked_add, checked_unchecked_add_u64);
+    generate_unchecked_math_harness!(u128, unchecked_add, checked_unchecked_add_u128);
+    generate_unchecked_math_harness!(usize, unchecked_add, checked_unchecked_add_usize);
 }
