@@ -1692,8 +1692,6 @@ mod verify {
     generate_unchecked_mul_harness!(i64, unchecked_mul, checked_unchecked_mul_i64, -1_000i64, 1_000i64);
     generate_unchecked_mul_harness!(i128, unchecked_mul, checked_unchecked_mul_i128, -1_000_000_000_000_000i128, 1_000_000_000_000_000i128);
     generate_unchecked_mul_harness!(isize, unchecked_mul, checked_unchecked_mul_isize, -100_000isize, 100_000isize);
-
-
     generate_unchecked_math_harness!(u8, unchecked_mul, checked_unchecked_mul_u8);
     generate_unchecked_math_harness!(u16, unchecked_mul, checked_unchecked_mul_u16);
     generate_unchecked_mul_harness!(u32, unchecked_mul, checked_unchecked_mul_u32, 0u32, 20_000u32);
@@ -1724,5 +1722,6 @@ mod verify {
     generate_unchecked_shift_harness!(u64, unchecked_shr, checked_unchecked_shr_u64);
     generate_unchecked_shift_harness!(u128, unchecked_shr, checked_unchecked_shr_u128);
     generate_unchecked_shift_harness!(usize, unchecked_shr, checked_unchecked_shr_usize);
-
+        }
+    }
 }
