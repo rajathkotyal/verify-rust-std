@@ -5,7 +5,7 @@
 use crate::str::FromStr;
 use crate::ub_checks::assert_unsafe_precondition;
 use crate::{ascii, intrinsics, mem};
-use safety::{ensures, requires};
+use safety::requires;
 
 #[cfg(kani)]
 use crate::kani;
