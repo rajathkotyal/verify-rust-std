@@ -1591,9 +1591,6 @@ from_str_radix_size_impl! { i64 isize, u64 usize }
 mod verify {
     use super::*;
 
-    // Verify `unchecked_{add, sub, mul}`
-    // However, `unchecked_mul` harnesses have bad performance, so
-    // recommend to use generate_unchecked_mul_harness! to set input limits
     macro_rules! generate_unchecked_math_harness {
         ($type:ty, $method:ident, $harness_name:ident) => {
             #[kani::proof_for_contract($type::$method)]
@@ -1608,15 +1605,14 @@ mod verify {
         }
     }
 
-    // Improve unchecked_mul performance for {32, 64, 128}-bit integer types
-    // by adding upper and lower limits for inputs
     macro_rules! generate_unchecked_mul_harness {
         ($type:ty, $method:ident, $harness_name:ident, $min:expr, $max:expr) => {
             #[kani::proof_for_contract($type::$method)]
             pub fn $harness_name() {
-                let num1: $type = kani::any::<$type>();
-                let num2: $type = kani::any::<$type>();
-
+                let num1: $type = kani::any();
+                let num2: $type = kani::any();
+    
+                // Limit the values of num1 and num2 to the specified range for multiplication
                 kani::assume(num1 >= $min && num1 <= $max);
                 kani::assume(num2 >= $min && num2 <= $max);
     
@@ -1626,8 +1622,8 @@ mod verify {
             }
         }
     }
+    
 
-    // Verify `unchecked_{shl, shr}`
     macro_rules! generate_unchecked_shift_harness {
         ($type:ty, $method:ident, $harness_name:ident) => {
             #[kani::proof_for_contract($type::$method)]
@@ -1641,6 +1637,7 @@ mod verify {
             }
         }
     }
+    
 
     macro_rules! generate_unchecked_neg_harness {
         ($type:ty, $method:ident, $harness_name:ident) => {
@@ -1702,6 +1699,7 @@ mod verify {
     generate_unchecked_mul_harness!(u128, unchecked_mul, checked_unchecked_mul_u128, 0u128, 1_000_000_000_000_000u128);
     generate_unchecked_mul_harness!(usize, unchecked_mul, checked_unchecked_mul_usize, 0usize, 100_000usize);
 
+
     // unchecked_shr proofs
     //
     // Target types:
@@ -1724,4 +1722,6 @@ mod verify {
     generate_unchecked_shift_harness!(u64, unchecked_shr, checked_unchecked_shr_u64);
     generate_unchecked_shift_harness!(u128, unchecked_shr, checked_unchecked_shr_u128);
     generate_unchecked_shift_harness!(usize, unchecked_shr, checked_unchecked_shr_usize);
+        }
+    }
 }
