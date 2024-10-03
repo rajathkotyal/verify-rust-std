@@ -5,7 +5,7 @@
 use crate::str::FromStr;
 use crate::ub_checks::assert_unsafe_precondition;
 use crate::{ascii, intrinsics, mem};
-use safety::{ensures, requires};
+use safety::requires;
 
 #[cfg(kani)]
 use crate::kani;
@@ -1401,10 +1401,7 @@ const fn from_str_radix_panic_ct(_radix: u32) -> ! {
 
 #[track_caller]
 fn from_str_radix_panic_rt(radix: u32) -> ! {
-    panic!(
-        "from_str_radix_int: must lie in the range `[2, 36]` - found {}",
-        radix
-    );
+    panic!("from_str_radix_int: must lie in the range `[2, 36]` - found {}", radix);
 }
 
 #[cfg_attr(not(feature = "panic_immediate_abort"), inline(never))]
@@ -1589,65 +1586,44 @@ from_str_radix_size_impl! { i32 isize, u32 usize }
 #[cfg(target_pointer_width = "64")]
 from_str_radix_size_impl! { i64 isize, u64 usize }
 
+#[cfg(kani)]
 #[unstable(feature = "kani", issue = "none")]
 mod verify {
     use super::*;
 
-    // `unchecked_add` proofs
-    //
-    // Target types:
-    // i{8,16,32,64,128} and u{8,16,32,64,128} -- 10 types in total
-    //
-    // Target contracts:
-    // #[requires(!self.overflowing_add(rhs).1)]
-    // #[ensures(|ret| *ret >= $SelfT::MIN && *ret <= $SelfT::MAX)]
-    //
-    // Target function:
-    // pub const unsafe fn unchecked_add(self, rhs: Self) -> Self
-    #[kani::proof_for_contract(i8::unchecked_add)]
-    pub fn check_unchecked_add_i8() {
-        let num1: i8 = kani::any::<i8>();
-        let num2: i8 = kani::any::<i8>();
+    macro_rules! generate_unchecked_math_harness {
+        ($type:ty, $method:ident, $harness_name:ident) => {
+            #[kani::proof_for_contract($type::$method)]
+            pub fn $harness_name() {
+                let num1: $type = kani::any::<$type>();
+                let num2: $type = kani::any::<$type>();
 
-        unsafe {
-            num1.unchecked_add(num2);
+                unsafe {
+                    num1.$method(num2);
+                }
+            }
         }
     }
 
-    #[kani::proof_for_contract(i16::unchecked_add)]
-    pub fn check_unchecked_add_i16() {
-        let num1: i16 = kani::any::<i16>();
-        let num2: i16 = kani::any::<i16>();
+    macro_rules! generate_unchecked_shift_harness {
+        ($type:ty, $method:ident, $harness_name:ident) => {
+            #[kani::proof_for_contract($type::$method)]
+            pub fn $harness_name() {
+                let num1: $type = kani::any::<$type>();
+                let num2: u32 = kani::any::<u32>();
 
-        unsafe {
-            num1.unchecked_add(num2);
+                unsafe {
+                    num1.$method(num2);
+                }
+            }
         }
     }
 
-    #[kani::proof_for_contract(i32::unchecked_add)]
-    pub fn check_unchecked_add_i32() {
-        let num1: i32 = kani::any::<i32>();
-        let num2: i32 = kani::any::<i32>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-    #[kani::proof_for_contract(i64::unchecked_add)]
-    pub fn check_unchecked_add_i64() {
-        let num1: i64 = kani::any::<i64>();
-        let num2: i64 = kani::any::<i64>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-    #[kani::proof_for_contract(i128::unchecked_add)]
-    pub fn check_unchecked_add_i128() {
-        let num1: i128 = kani::any::<i128>();
-        let num2: i128 = kani::any::<i128>();
+    macro_rules! generate_unchecked_neg_harness {
+        ($type:ty, $method:ident, $harness_name:ident) => {
+            #[kani::proof_for_contract($type::$method)]
+            pub fn $harness_name() {
+                let num1: $type = kani::any::<$type>();
 
         unsafe {
             num1.unchecked_add(num2);

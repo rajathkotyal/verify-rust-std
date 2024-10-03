@@ -559,7 +559,6 @@ macro_rules! uint_impl {
         #[inline(always)]
         #[cfg_attr(miri, track_caller)] // even without panics, this helps for Miri backtraces
         #[requires(!self.overflowing_add(rhs).1)]
-        #[ensures(|ret| *ret >= $SelfT::MIN && *ret <= $SelfT::MAX)]
         pub const unsafe fn unchecked_add(self, rhs: Self) -> Self {
             assert_unsafe_precondition!(
                 check_language_ub,
