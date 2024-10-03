@@ -1724,4 +1724,30 @@ mod verify {
     generate_unchecked_shift_harness!(u64, unchecked_shr, checked_unchecked_shr_u64);
     generate_unchecked_shift_harness!(u128, unchecked_shr, checked_unchecked_shr_u128);
     generate_unchecked_shift_harness!(usize, unchecked_shr, checked_unchecked_shr_usize);
+
+    // `unchecked_shl` proofs
+    //
+    // Target types:
+    // i{8,16,32,64,128} and u{8,16,32,64,128} -- 10 types in total
+    //
+    // Target contracts:
+    // #[requires(shift < Self::BITS)]
+    // #[ensures(|ret| *ret == self << shift)]
+    //
+    // Target function:
+    // pub const unsafe fn unchecked_shl(self, shift: u32) -> Self
+    //
+    // This function performs an unchecked bitwise left shift operation.
+    generate_unchecked_shift_harness!(i8, unchecked_shl, checked_unchecked_shl_i8);
+    generate_unchecked_shift_harness!(i16, unchecked_shl, checked_unchecked_shl_i16);
+    generate_unchecked_shift_harness!(i32, unchecked_shl, checked_unchecked_shl_i32);
+    generate_unchecked_shift_harness!(i64, unchecked_shl, checked_unchecked_shl_i64);
+    generate_unchecked_shift_harness!(i128, unchecked_shl, checked_unchecked_shl_i128);
+    generate_unchecked_shift_harness!(isize, unchecked_shl, checked_unchecked_shl_isize);
+    generate_unchecked_shift_harness!(u8, unchecked_shl, checked_unchecked_shl_u8);
+    generate_unchecked_shift_harness!(u16, unchecked_shl, checked_unchecked_shl_u16);
+    generate_unchecked_shift_harness!(u32, unchecked_shl, checked_unchecked_shl_u32);
+    generate_unchecked_shift_harness!(u64, unchecked_shl, checked_unchecked_shl_u64);
+    generate_unchecked_shift_harness!(u128, unchecked_shl, checked_unchecked_shl_u128);
+    generate_unchecked_shift_harness!(usize, unchecked_shl, checked_unchecked_shl_usize);
 }
