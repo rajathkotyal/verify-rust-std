@@ -1738,103 +1738,17 @@ mod verify {
     // pub const unsafe fn unchecked_shl(self, shift: u32) -> Self
     //
     // This function performs an unchecked bitwise left shift operation.
-    #[kani::proof_for_contract(i8::unchecked_shl)]
-    pub fn check_unchecked_shl_i8() {
-        let num1: i8 = kani::any::<i8>();
-        let shift: u32 = kani::any::<u32>();
+    generate_unchecked_shift_harness!(i8, unchecked_shl, checked_unchecked_shl_i8);
+    generate_unchecked_shift_harness!(i16, unchecked_shl, checked_unchecked_shl_i16);
+    generate_unchecked_shift_harness!(i32, unchecked_shl, checked_unchecked_shl_i32);
+    generate_unchecked_shift_harness!(i64, unchecked_shl, checked_unchecked_shl_i64);
+    generate_unchecked_shift_harness!(i128, unchecked_shl, checked_unchecked_shl_i128);
+    generate_unchecked_shift_harness!(isize, unchecked_shl, checked_unchecked_shl_isize);
+    generate_unchecked_shift_harness!(u8, unchecked_shl, checked_unchecked_shl_u8);
+    generate_unchecked_shift_harness!(u16, unchecked_shl, checked_unchecked_shl_u16);
+    generate_unchecked_shift_harness!(u32, unchecked_shl, checked_unchecked_shl_u32);
+    generate_unchecked_shift_harness!(u64, unchecked_shl, checked_unchecked_shl_u64);
+    generate_unchecked_shift_harness!(u128, unchecked_shl, checked_unchecked_shl_u128);
+    generate_unchecked_shift_harness!(usize, unchecked_shl, checked_unchecked_shl_usize);
 
-        unsafe {
-            num1.unchecked_shl(shift);
-        }
-    }
-
-    #[kani::proof_for_contract(i16::unchecked_shl)]
-    pub fn check_unchecked_shl_i16() {
-        let num1: i16 = kani::any::<i16>();
-        let shift: u32 = kani::any::<u32>();
-
-        unsafe {
-            num1.unchecked_shl(shift);
-        }
-    }
-
-    #[kani::proof_for_contract(i32::unchecked_shl)]
-    pub fn check_unchecked_shl_i32() {
-        let num1: i32 = kani::any::<i32>();
-        let shift: u32 = kani::any::<u32>();
-
-        unsafe {
-            num1.unchecked_shl(shift);
-        }
-    }
-
-    #[kani::proof_for_contract(i64::unchecked_shl)]
-    pub fn check_unchecked_shl_i64() {
-        let num1: i64 = kani::any::<i64>();
-        let shift: u32 = kani::any::<u32>();
-
-        unsafe {
-            num1.unchecked_shl(shift);
-        }
-    }
-
-    #[kani::proof_for_contract(i128::unchecked_shl)]
-    pub fn check_unchecked_shl_i128() {
-        let num1: i128 = kani::any::<i128>();
-        let shift: u32 = kani::any::<u32>();
-
-        unsafe {
-            num1.unchecked_shl(shift);
-        }
-    }
-
-    #[kani::proof_for_contract(u8::unchecked_shl)]
-    pub fn check_unchecked_shl_u8() {
-        let num1: u8 = kani::any::<u8>();
-        let shift: u32 = kani::any::<u32>();
-
-        unsafe {
-            num1.unchecked_shl(shift);
-        }
-    }
-
-    #[kani::proof_for_contract(u16::unchecked_shl)]
-    pub fn check_unchecked_shl_u16() {
-        let num1: u16 = kani::any::<u16>();
-        let shift: u32 = kani::any::<u32>();
-
-        unsafe {
-            num1.unchecked_shl(shift);
-        }
-    }
-
-    #[kani::proof_for_contract(u32::unchecked_shl)]
-    pub fn check_unchecked_shl_u32() {
-        let num1: u32 = kani::any::<u32>();
-        let shift: u32 = kani::any::<u32>();
-
-        unsafe {
-            num1.unchecked_shl(shift);
-        }
-    }
-
-    #[kani::proof_for_contract(u64::unchecked_shl)]
-    pub fn check_unchecked_shl_u64() {
-        let num1: u64 = kani::any::<u64>();
-        let shift: u32 = kani::any::<u32>();
-
-        unsafe {
-            num1.unchecked_shl(shift);
-        }
-    }
-
-    #[kani::proof_for_contract(u128::unchecked_shl)]
-    pub fn check_unchecked_shl_u128() {
-        let num1: u128 = kani::any::<u128>();
-        let shift: u32 = kani::any::<u32>();
-
-        unsafe {
-            num1.unchecked_shl(shift);
-        }
-    }
 }
