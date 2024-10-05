@@ -5,7 +5,7 @@
 use crate::str::FromStr;
 use crate::ub_checks::assert_unsafe_precondition;
 use crate::{ascii, intrinsics, mem};
-use safety::{ensures, requires};
+use safety::requires;
 
 #[cfg(kani)]
 use crate::kani;
@@ -1592,8 +1592,6 @@ mod verify {
     use super::*;
 
     // Verify `unchecked_{add, sub, mul}`
-    // However, `unchecked_mul` harnesses have bad performance, so
-    // recommend to use generate_unchecked_mul_harness! to set input limits
     macro_rules! generate_unchecked_math_harness {
         ($type:ty, $method:ident, $harness_name:ident) => {
             #[kani::proof_for_contract($type::$method)]
@@ -1639,7 +1637,7 @@ mod verify {
             pub fn $harness_name() {
                 let num1: $type = kani::any::<$type>();
                 let num2: u32 = kani::any::<u32>();
-    
+
                 unsafe {
                     num1.$method(num2);
                 }
@@ -1650,11 +1648,14 @@ mod verify {
     macro_rules! generate_unchecked_neg_harness {
         ($type:ty, $method:ident, $harness_name:ident) => {
             #[kani::proof_for_contract($type::$method)]
+        ($type:ty, $harness_name:ident) => {
+            #[kani::proof_for_contract($type::unchecked_neg)]
             pub fn $harness_name() {
                 let num1: $type = kani::any::<$type>();
 
                 unsafe {
                     num1.$method();
+                    num1.unchecked_neg();
                 }
             }
         }
