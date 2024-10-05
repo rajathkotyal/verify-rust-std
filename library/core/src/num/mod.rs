@@ -1684,7 +1684,7 @@ mod verify {
     // unchecked_mul proofs
     //
     // Target types:
-    // i{8,16,32,64,128, size} and u{8,16,32,64,128, size} -- 12 types in total
+    // i{8,16,32,64,128, size} and u{8,16,32,64,128, size} -- 36 types in total
     //
     // Target contracts:
     // #[requires(!self.overflowing_mul(rhs).1)]
@@ -1692,38 +1692,8 @@ mod verify {
     // Target function:
     // pub const unsafe fn unchecked_mul(self, rhs: Self) -> Self
     // exponential state spaces for 32,64 and 128, hence provided limited range for verification.
-
-    // ====================== i128 Harnesses ======================
-    generate_unchecked_mul_intervals!(i128, unchecked_mul,
-        unchecked_mul_i128_small, -10i128, 10i128,
-        unchecked_mul_i128_large_pos, i128::MAX - 1000i128, i128::MAX,
-        unchecked_mul_i128_large_neg, i128::MIN, i128::MIN + 1000i128,
-        unchecked_mul_i128_edge_pos, i128::MAX / 2, i128::MAX,
-        unchecked_mul_i128_edge_neg, i128::MIN, i128::MIN / 2
-    );
-
-    // ====================== u128 Harnesses ======================
-    generate_unchecked_mul_intervals!(u128, unchecked_mul,
-        unchecked_mul_u128_small, 0u128, 10u128,
-        unchecked_mul_u128_large, u128::MAX - 1000u128, u128::MAX,
-        unchecked_mul_u128_edge, u128::MAX / 2, u128::MAX
-    );
-
-    // ====================== i64 Harnesses ======================
-    generate_unchecked_mul_intervals!(i64, unchecked_mul,
-        unchecked_mul_i64_small, -10i64, 10i64,
-        unchecked_mul_i64_large_pos, i64::MAX - 1000i64, i64::MAX,
-        unchecked_mul_i64_large_neg, i64::MIN, i64::MIN + 1000i64,
-        unchecked_mul_i64_edge_pos, i64::MAX / 2, i64::MAX,
-        unchecked_mul_i64_edge_neg, i64::MIN, i64::MIN / 2
-    );
-
-    // ====================== u64 Harnesses ======================
-    generate_unchecked_mul_intervals!(u64, unchecked_mul,
-        unchecked_mul_u64_small, 0u64, 10u64,
-        unchecked_mul_u64_large, u64::MAX - 1000u64, u64::MAX,
-        unchecked_mul_u64_edge, u64::MAX / 2, u64::MAX
-    );
+    generate_unchecked_math_harness!(i8, unchecked_mul, checked_unchecked_mul_i8);
+    generate_unchecked_math_harness!(i16, unchecked_mul, checked_unchecked_mul_i16);
 
     // ====================== i32 Harnesses ======================
     generate_unchecked_mul_intervals!(i32, unchecked_mul,
@@ -1733,6 +1703,33 @@ mod verify {
         unchecked_mul_i32_edge_pos, i32::MAX / 2, i32::MAX,
         unchecked_mul_i32_edge_neg, i32::MIN, i32::MIN / 2
     );
+    // ====================== i64 Harnesses ======================
+    generate_unchecked_mul_intervals!(i64, unchecked_mul,
+        unchecked_mul_i64_small, -10i64, 10i64,
+        unchecked_mul_i64_large_pos, i64::MAX - 1000i64, i64::MAX,
+        unchecked_mul_i64_large_neg, i64::MIN, i64::MIN + 1000i64,
+        unchecked_mul_i64_edge_pos, i64::MAX / 2, i64::MAX,
+        unchecked_mul_i64_edge_neg, i64::MIN, i64::MIN / 2
+    );
+    // ====================== i128 Harnesses ======================
+    generate_unchecked_mul_intervals!(i128, unchecked_mul,
+        unchecked_mul_i128_small, -10i128, 10i128,
+        unchecked_mul_i128_large_pos, i128::MAX - 1000i128, i128::MAX,
+        unchecked_mul_i128_large_neg, i128::MIN, i128::MIN + 1000i128,
+        unchecked_mul_i128_edge_pos, i128::MAX / 2, i128::MAX,
+        unchecked_mul_i128_edge_neg, i128::MIN, i128::MIN / 2
+    );
+    // ====================== isize Harnesses ======================
+    generate_unchecked_mul_intervals!(isize, unchecked_mul,
+        unchecked_mul_isize_small, -10isize, 10isize,
+        unchecked_mul_isize_large_pos, isize::MAX - 1000isize, isize::MAX,
+        unchecked_mul_isize_large_neg, isize::MIN, isize::MIN + 1000isize,
+        unchecked_mul_isize_edge_pos, isize::MAX / 2, isize::MAX,
+        unchecked_mul_isize_edge_neg, isize::MIN, isize::MIN / 2
+    );
+
+    generate_unchecked_math_harness!(u8, unchecked_mul, checked_unchecked_mul_u8);
+    generate_unchecked_math_harness!(u16, unchecked_mul, checked_unchecked_mul_u16);
 
     // ====================== u32 Harnesses ======================
     generate_unchecked_mul_intervals!(u32, unchecked_mul,
@@ -1740,7 +1737,24 @@ mod verify {
         unchecked_mul_u32_large, u32::MAX - 1000u32, u32::MAX,
         unchecked_mul_u32_edge, u32::MAX / 2, u32::MAX
     );
-
+    // ====================== u64 Harnesses ======================
+    generate_unchecked_mul_intervals!(u64, unchecked_mul,
+        unchecked_mul_u64_small, 0u64, 10u64,
+        unchecked_mul_u64_large, u64::MAX - 1000u64, u64::MAX,
+        unchecked_mul_u64_edge, u64::MAX / 2, u64::MAX
+    );
+    // ====================== u128 Harnesses ======================
+    generate_unchecked_mul_intervals!(u128, unchecked_mul,
+        unchecked_mul_u128_small, 0u128, 10u128,
+        unchecked_mul_u128_large, u128::MAX - 1000u128, u128::MAX,
+        unchecked_mul_u128_edge, u128::MAX / 2, u128::MAX
+    );
+    // ====================== usize Harnesses ======================
+    generate_unchecked_mul_intervals!(usize, unchecked_mul,
+        unchecked_mul_usize_small, 0usize, 10usize,
+        unchecked_mul_usize_large, usize::MAX - 1000usize, usize::MAX,
+        unchecked_mul_usize_edge, usize::MAX / 2, usize::MAX
+    );
 
     // unchecked_shr proofs
     //
@@ -1768,7 +1782,7 @@ mod verify {
     // `unchecked_shl` proofs
     //
     // Target types:
-    // i{8,16,32,64,128} and u{8,16,32,64,128} -- 10 types in total
+    // i{8,16,32,64,128} and u{8,16,32,64,128} -- 12 types in total
     //
     // Target contracts:
     // #[requires(shift < Self::BITS)]
