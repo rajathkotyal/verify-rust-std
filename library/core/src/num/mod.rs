@@ -1805,4 +1805,17 @@ mod verify {
     generate_unchecked_shift_harness!(u64, unchecked_shl, checked_unchecked_shl_u64);
     generate_unchecked_shift_harness!(u128, unchecked_shl, checked_unchecked_shl_u128);
     generate_unchecked_shift_harness!(usize, unchecked_shl, checked_unchecked_shl_usize);
+
+    generate_unchecked_math_harness!(i8, unchecked_sub, checked_unchecked_sub_i8);
+    generate_unchecked_math_harness!(i16, unchecked_sub, checked_unchecked_sub_i16);
+    generate_unchecked_math_harness!(i32, unchecked_sub, checked_unchecked_sub_i32);
+    generate_unchecked_math_harness!(i64, unchecked_sub, checked_unchecked_sub_i64);
+    generate_unchecked_math_harness!(i128, unchecked_sub, checked_unchecked_sub_i128);
+    generate_unchecked_math_harness!(isize, unchecked_sub, checked_unchecked_sub_isize);
+    generate_unchecked_math_harness!(u8, unchecked_sub, checked_unchecked_sub_u8);
+    generate_unchecked_math_harness!(u16, unchecked_sub, checked_unchecked_sub_u16);
+    generate_unchecked_math_harness!(u32, unchecked_sub, checked_unchecked_sub_u32);
+    generate_unchecked_math_harness!(u64, unchecked_sub, checked_unchecked_sub_u64);
+    generate_unchecked_math_harness!(u128, unchecked_sub, checked_unchecked_sub_u128);
+    generate_unchecked_math_harness!(usize, unchecked_sub, checked_unchecked_sub_usize);
 }
