@@ -1591,6 +1591,7 @@ from_str_radix_size_impl! { i64 isize, u64 usize }
 mod verify {
     use super::*;
 
+    // Verify `unchecked_{add, sub, mul}`
     macro_rules! generate_unchecked_math_harness {
         ($type:ty, $method:ident, $harness_name:ident) => {
             #[kani::proof_for_contract($type::$method)]
@@ -1605,6 +1606,31 @@ mod verify {
         }
     }
 
+    // Improve unchecked_mul performance for {32, 64, 128}-bit integer types
+    // by adding upper and lower limits for inputs
+    macro_rules! generate_unchecked_mul_intervals {
+        ($type:ty, $method:ident, $($harness_name:ident, $min:expr, $max:expr),+) => {
+            $(
+                #[kani::proof_for_contract($type::$method)]
+                pub fn $harness_name() {
+                    let num1: $type = kani::any::<$type>();
+                    let num2: $type = kani::any::<$type>();
+    
+                    kani::assume(num1 >= $min && num1 <= $max);
+                    kani::assume(num2 >= $min && num2 <= $max);
+    
+                    // Ensure that multiplication does not overflow
+                    kani::assume(!num1.overflowing_mul(num2).1);
+    
+                    unsafe {
+                        num1.$method(num2);
+                    }
+                }
+            )+
+        }
+    }
+
+    // Verify `unchecked_{shl, shr}`
     macro_rules! generate_unchecked_shift_harness {
         ($type:ty, $method:ident, $harness_name:ident) => {
             #[kani::proof_for_contract($type::$method)]
@@ -1620,68 +1646,19 @@ mod verify {
     }
 
     macro_rules! generate_unchecked_neg_harness {
-        ($type:ty, $method:ident, $harness_name:ident) => {
-            #[kani::proof_for_contract($type::$method)]
+        ($type:ty, $harness_name:ident) => {
+            #[kani::proof_for_contract($type::unchecked_neg)]
             pub fn $harness_name() {
                 let num1: $type = kani::any::<$type>();
 
-        unsafe {
-            num1.unchecked_add(num2);
+                unsafe {
+                    num1.unchecked_neg();
+                }
+            }
         }
     }
 
-    #[kani::proof_for_contract(u8::unchecked_add)]
-    pub fn check_unchecked_add_u8() {
-        let num1: u8 = kani::any::<u8>();
-        let num2: u8 = kani::any::<u8>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-    #[kani::proof_for_contract(u16::unchecked_add)]
-    pub fn check_unchecked_add_u16() {
-        let num1: u16 = kani::any::<u16>();
-        let num2: u16 = kani::any::<u16>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-    #[kani::proof_for_contract(u32::unchecked_add)]
-    pub fn check_unchecked_add_u32() {
-        let num1: u32 = kani::any::<u32>();
-        let num2: u32 = kani::any::<u32>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-    #[kani::proof_for_contract(u64::unchecked_add)]
-    pub fn check_unchecked_add_u64() {
-        let num1: u64 = kani::any::<u64>();
-        let num2: u64 = kani::any::<u64>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-    #[kani::proof_for_contract(u128::unchecked_add)]
-    pub fn check_unchecked_add_u128() {
-        let num1: u128 = kani::any::<u128>();
-        let num2: u128 = kani::any::<u128>();
-
-        unsafe {
-            num1.unchecked_add(num2);
-        }
-    }
-
-
-    // `unchecked_sub` proofs
+    // `unchecked_add` proofs
     //
     // Target types:
     // i{8,16,32,64,128} and u{8,16,32,64,128} -- 10 types in total
@@ -1691,99 +1668,141 @@ mod verify {
     //#[ensures(|ret| *ret >= Self::MIN && *ret <= Self::MAX)] // Postconditions: Result must be within valid bounds
     //
     // Target function:
-    // pub const unsafe fn unchecked_sub(self, rhs: Self) -> Self
+    // pub const unsafe fn unchecked_add(self, rhs: Self) -> Self
+    generate_unchecked_math_harness!(i8, unchecked_add, checked_unchecked_add_i8);
+    generate_unchecked_math_harness!(i16, unchecked_add, checked_unchecked_add_i16);
+    generate_unchecked_math_harness!(i32, unchecked_add, checked_unchecked_add_i32);
+    generate_unchecked_math_harness!(i64, unchecked_add, checked_unchecked_add_i64);
+    generate_unchecked_math_harness!(i128, unchecked_add, checked_unchecked_add_i128);
+    generate_unchecked_math_harness!(isize, unchecked_add, checked_unchecked_add_isize);
+    generate_unchecked_math_harness!(u8, unchecked_add, checked_unchecked_add_u8);
+    generate_unchecked_math_harness!(u16, unchecked_add, checked_unchecked_add_u16);
+    generate_unchecked_math_harness!(u32, unchecked_add, checked_unchecked_add_u32);
+    generate_unchecked_math_harness!(u64, unchecked_add, checked_unchecked_add_u64);
+    generate_unchecked_math_harness!(u128, unchecked_add, checked_unchecked_add_u128);
+    generate_unchecked_math_harness!(usize, unchecked_add, checked_unchecked_add_usize);
 
-    #[kani::proof_for_contract(i8::unchecked_sub)]
-    pub fn check_unchecked_sub_i8() {
-        let num1: i8 = kani::any::<i8>();
-        let num2: i8 = kani::any::<i8>();
-        unsafe {
-            num1.unchecked_sub(num2);
-        }
-    }
-    
-    #[kani::proof_for_contract(i16::unchecked_sub)]
-    pub fn check_unchecked_sub_i16() {
-        let num1: i16 = kani::any::<i16>();
-        let num2: i16 = kani::any::<i16>();
-        unsafe {
-            num1.unchecked_sub(num2);
-        }
-    }
-    
-    #[kani::proof_for_contract(i32::unchecked_sub)]
-    pub fn check_unchecked_sub_i32() {
-        let num1: i32 = kani::any::<i32>();
-        let num2: i32 = kani::any::<i32>();
-        unsafe {
-            num1.unchecked_sub(num2);
-        }
-    }
-    
-    #[kani::proof_for_contract(i64::unchecked_sub)]
-    pub fn check_unchecked_sub_i64() {
-        let num1: i64 = kani::any::<i64>();
-        let num2: i64 = kani::any::<i64>();
-        unsafe {
-            num1.unchecked_sub(num2);
-        }
-    }
-    
-    #[kani::proof_for_contract(i128::unchecked_sub)]
-    pub fn check_unchecked_sub_i128() {
-        let num1: i128 = kani::any::<i128>();
-        let num2: i128 = kani::any::<i128>();
-        unsafe {
-            num1.unchecked_sub(num2);
-        }
-    }
-    
-    #[kani::proof_for_contract(u8::unchecked_sub)]
-    pub fn check_unchecked_sub_u8() {
-        let num1: u8 = kani::any::<u8>();
-        let num2: u8 = kani::any::<u8>();
-        unsafe {
-            num1.unchecked_sub(num2);
-        }
-    }
-    
-    #[kani::proof_for_contract(u16::unchecked_sub)]
-    pub fn check_unchecked_sub_u16() {
-        let num1: u16 = kani::any::<u16>();
-        let num2: u16 = kani::any::<u16>();
-        unsafe {
-            num1.unchecked_sub(num2);
-        }
-    }
-    
-    #[kani::proof_for_contract(u32::unchecked_sub)]
-    pub fn check_unchecked_sub_u32() {
-        let num1: u32 = kani::any::<u32>();
-        let num2: u32 = kani::any::<u32>();
-        unsafe {
-            num1.unchecked_sub(num2);
-        }
-    }
-    
-    #[kani::proof_for_contract(u64::unchecked_sub)]
-    pub fn check_unchecked_sub_u64() {
-        let num1: u64 = kani::any::<u64>();
-        let num2: u64 = kani::any::<u64>();
-        unsafe {
-            num1.unchecked_sub(num2);
-        }
-    }
-    
-    #[kani::proof_for_contract(u128::unchecked_sub)]
-    pub fn check_unchecked_sub_u128() {
-        let num1: u128 = kani::any::<u128>();
-        let num2: u128 = kani::any::<u128>();
-        unsafe {
-            num1.unchecked_sub(num2);
-        }
-    }
-    
+    // unchecked_mul proofs
+    //
+    // Target types:
+    // i{8,16,32,64,128, size} and u{8,16,32,64,128, size} -- 36 types in total
+    //
+    // Target contracts:
+    // #[requires(!self.overflowing_mul(rhs).1)]
+    //
+    // Target function:
+    // pub const unsafe fn unchecked_mul(self, rhs: Self) -> Self
+    // exponential state spaces for 32,64 and 128, hence provided limited range for verification.
+    generate_unchecked_math_harness!(i8, unchecked_mul, checked_unchecked_mul_i8);
+    generate_unchecked_math_harness!(i16, unchecked_mul, checked_unchecked_mul_i16);
 
+    // ====================== i32 Harnesses ======================
+    generate_unchecked_mul_intervals!(i32, unchecked_mul,
+        unchecked_mul_i32_small, -10i32, 10i32,
+        unchecked_mul_i32_large_pos, i32::MAX - 1000i32, i32::MAX,
+        unchecked_mul_i32_large_neg, i32::MIN, i32::MIN + 1000i32,
+        unchecked_mul_i32_edge_pos, i32::MAX / 2, i32::MAX,
+        unchecked_mul_i32_edge_neg, i32::MIN, i32::MIN / 2
+    );
+    // ====================== i64 Harnesses ======================
+    generate_unchecked_mul_intervals!(i64, unchecked_mul,
+        unchecked_mul_i64_small, -10i64, 10i64,
+        unchecked_mul_i64_large_pos, i64::MAX - 1000i64, i64::MAX,
+        unchecked_mul_i64_large_neg, i64::MIN, i64::MIN + 1000i64,
+        unchecked_mul_i64_edge_pos, i64::MAX / 2, i64::MAX,
+        unchecked_mul_i64_edge_neg, i64::MIN, i64::MIN / 2
+    );
+    // ====================== i128 Harnesses ======================
+    generate_unchecked_mul_intervals!(i128, unchecked_mul,
+        unchecked_mul_i128_small, -10i128, 10i128,
+        unchecked_mul_i128_large_pos, i128::MAX - 1000i128, i128::MAX,
+        unchecked_mul_i128_large_neg, i128::MIN, i128::MIN + 1000i128,
+        unchecked_mul_i128_edge_pos, i128::MAX / 2, i128::MAX,
+        unchecked_mul_i128_edge_neg, i128::MIN, i128::MIN / 2
+    );
+    // ====================== isize Harnesses ======================
+    generate_unchecked_mul_intervals!(isize, unchecked_mul,
+        unchecked_mul_isize_small, -10isize, 10isize,
+        unchecked_mul_isize_large_pos, isize::MAX - 1000isize, isize::MAX,
+        unchecked_mul_isize_large_neg, isize::MIN, isize::MIN + 1000isize,
+        unchecked_mul_isize_edge_pos, isize::MAX / 2, isize::MAX,
+        unchecked_mul_isize_edge_neg, isize::MIN, isize::MIN / 2
+    );
 
-    
+    generate_unchecked_math_harness!(u8, unchecked_mul, checked_unchecked_mul_u8);
+    generate_unchecked_math_harness!(u16, unchecked_mul, checked_unchecked_mul_u16);
+
+    // ====================== u32 Harnesses ======================
+    generate_unchecked_mul_intervals!(u32, unchecked_mul,
+        unchecked_mul_u32_small, 0u32, 10u32,
+        unchecked_mul_u32_large, u32::MAX - 1000u32, u32::MAX,
+        unchecked_mul_u32_edge, u32::MAX / 2, u32::MAX
+    );
+    // ====================== u64 Harnesses ======================
+    generate_unchecked_mul_intervals!(u64, unchecked_mul,
+        unchecked_mul_u64_small, 0u64, 10u64,
+        unchecked_mul_u64_large, u64::MAX - 1000u64, u64::MAX,
+        unchecked_mul_u64_edge, u64::MAX / 2, u64::MAX
+    );
+    // ====================== u128 Harnesses ======================
+    generate_unchecked_mul_intervals!(u128, unchecked_mul,
+        unchecked_mul_u128_small, 0u128, 10u128,
+        unchecked_mul_u128_large, u128::MAX - 1000u128, u128::MAX,
+        unchecked_mul_u128_edge, u128::MAX / 2, u128::MAX
+    );
+    // ====================== usize Harnesses ======================
+    generate_unchecked_mul_intervals!(usize, unchecked_mul,
+        unchecked_mul_usize_small, 0usize, 10usize,
+        unchecked_mul_usize_large, usize::MAX - 1000usize, usize::MAX,
+        unchecked_mul_usize_edge, usize::MAX / 2, usize::MAX
+    );
+
+    // unchecked_shr proofs
+    //
+    // Target types:
+    // i{8,16,32,64,128,size} and u{8,16,32,64,128,size} -- 12 types in total
+    //
+    // Target contracts:
+    // #[requires(rhs < <$ActualT>::BITS)]
+    //
+    // Target function:
+    // pub const unsafe fn unchecked_shr(self, rhs: u32) -> Self
+    generate_unchecked_shift_harness!(i8, unchecked_shr, checked_unchecked_shr_i8);
+    generate_unchecked_shift_harness!(i16, unchecked_shr, checked_unchecked_shr_i16);
+    generate_unchecked_shift_harness!(i32, unchecked_shr, checked_unchecked_shr_i32);
+    generate_unchecked_shift_harness!(i64, unchecked_shr, checked_unchecked_shr_i64);
+    generate_unchecked_shift_harness!(i128, unchecked_shr, checked_unchecked_shr_i128);
+    generate_unchecked_shift_harness!(isize, unchecked_shr, checked_unchecked_shr_isize);
+    generate_unchecked_shift_harness!(u8, unchecked_shr, checked_unchecked_shr_u8);
+    generate_unchecked_shift_harness!(u16, unchecked_shr, checked_unchecked_shr_u16);
+    generate_unchecked_shift_harness!(u32, unchecked_shr, checked_unchecked_shr_u32);
+    generate_unchecked_shift_harness!(u64, unchecked_shr, checked_unchecked_shr_u64);
+    generate_unchecked_shift_harness!(u128, unchecked_shr, checked_unchecked_shr_u128);
+    generate_unchecked_shift_harness!(usize, unchecked_shr, checked_unchecked_shr_usize);
+
+    // `unchecked_shl` proofs
+    //
+    // Target types:
+    // i{8,16,32,64,128} and u{8,16,32,64,128} -- 12 types in total
+    //
+    // Target contracts:
+    // #[requires(shift < Self::BITS)]
+    // #[ensures(|ret| *ret == self << shift)]
+    //
+    // Target function:
+    // pub const unsafe fn unchecked_shl(self, shift: u32) -> Self
+    //
+    // This function performs an unchecked bitwise left shift operation.
+    generate_unchecked_shift_harness!(i8, unchecked_shl, checked_unchecked_shl_i8);
+    generate_unchecked_shift_harness!(i16, unchecked_shl, checked_unchecked_shl_i16);
+    generate_unchecked_shift_harness!(i32, unchecked_shl, checked_unchecked_shl_i32);
+    generate_unchecked_shift_harness!(i64, unchecked_shl, checked_unchecked_shl_i64);
+    generate_unchecked_shift_harness!(i128, unchecked_shl, checked_unchecked_shl_i128);
+    generate_unchecked_shift_harness!(isize, unchecked_shl, checked_unchecked_shl_isize);
+    generate_unchecked_shift_harness!(u8, unchecked_shl, checked_unchecked_shl_u8);
+    generate_unchecked_shift_harness!(u16, unchecked_shl, checked_unchecked_shl_u16);
+    generate_unchecked_shift_harness!(u32, unchecked_shl, checked_unchecked_shl_u32);
+    generate_unchecked_shift_harness!(u64, unchecked_shl, checked_unchecked_shl_u64);
+    generate_unchecked_shift_harness!(u128, unchecked_shl, checked_unchecked_shl_u128);
+    generate_unchecked_shift_harness!(usize, unchecked_shl, checked_unchecked_shl_usize);
 }
