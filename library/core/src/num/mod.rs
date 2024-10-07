@@ -1806,6 +1806,18 @@ mod verify {
     generate_unchecked_shift_harness!(u128, unchecked_shl, checked_unchecked_shl_u128);
     generate_unchecked_shift_harness!(usize, unchecked_shl, checked_unchecked_shl_usize);
 
+    // `unchecked_sub` proofs
+    //
+    // Target types:
+    // i{8,16,32,64,128} and u{8,16,32,64,128} -- 12 types in total
+    //
+    // Target contracts:
+    // #[requires(!self.overflowing_sub(rhs).1)] // Preconditions: No overflow should occur
+    //
+    // Target function:
+    // pub const unsafe fn unchecked_sub(self, rhs: Self)  -> Self
+    //
+    // This function performs an unchecked subtraction operation.
     generate_unchecked_math_harness!(i8, unchecked_sub, checked_unchecked_sub_i8);
     generate_unchecked_math_harness!(i16, unchecked_sub, checked_unchecked_sub_i16);
     generate_unchecked_math_harness!(i32, unchecked_sub, checked_unchecked_sub_i32);
