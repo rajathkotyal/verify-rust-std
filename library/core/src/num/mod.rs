@@ -1645,7 +1645,7 @@ mod verify {
         }
     }
 
-    // Verify `wrapping_{shl, shr}`
+    // Verify `wrapping_{shl, shr}` which internally uses `unchecked_{shl,shr}`
     macro_rules! generate_wrapping_shift_harness {
         ($type:ty, $method:ident, $harness_name:ident) => {
             #[kani::proof_for_contract($type::$method)]
