@@ -1672,9 +1672,6 @@ mod verify {
                     kani::assume(lhs >= $min && lhs <= $max);
                     kani::assume(rhs >= $min && rhs <= $max);
 
-                    // Ensure that multiplication in the wider type does not overflow
-                    kani::assume(!((lhs as $wide_type).overflowing_mul(rhs as $wide_type).1));
-
                     let (result_low, result_high) = lhs.widening_mul(rhs);
 
                     // Compute expected result using wider type
