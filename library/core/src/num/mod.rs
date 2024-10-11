@@ -1895,12 +1895,11 @@ mod verify {
     // i{8,16,32,64,128,size} and u{8,16,32,64,128,size} -- 12 types in total
     //
     // Target contracts:
-    // #[requires(rhs < Self::BITS)]
     // #[requires(rhs < <$ActualT>::BITS)] 
     // Target function:
     // pub const fn wrapping_shr(self, rhs: u32) -> Self {
     //
-    // This function performs an panic-free bitwise righyt shift operation.
+    // This function performs an panic-free bitwise right shift operation.
     generate_wrapping_shift_harness!(i8, wrapping_shr, checked_wrapping_shr_i8);
     generate_wrapping_shift_harness!(i16, wrapping_shr, checked_wrapping_shr_i16);
     generate_wrapping_shift_harness!(i32, wrapping_shr, checked_wrapping_shr_i32);
