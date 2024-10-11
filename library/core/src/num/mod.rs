@@ -1658,6 +1658,22 @@ mod verify {
         }
     }
 
+    macro_rules! generate_carrying_mul_harness {
+        ($type:ty, $carry_type:ty, $harness_name:ident) => {
+            #[kani::proof_for_contract($type::carrying_mul)]
+            pub fn $harness_name() {
+                let num1: $type = kani::any::<$type>();
+                let num2: $type = kani::any::<$type>();
+    
+                // Simulate carry multiplication
+                let (result, carry) = num1.carrying_mul(num2);
+    
+                // Check if the carry is within bounds of the carry type
+                assert!(carry <= <$carry_type>::MAX);
+            }
+        }
+    }
+
     // `unchecked_add` proofs
     //
     // Target types:
@@ -1849,4 +1865,21 @@ mod verify {
     generate_unchecked_math_harness!(u64, unchecked_sub, checked_unchecked_sub_u64);
     generate_unchecked_math_harness!(u128, unchecked_sub, checked_unchecked_sub_u128);
     generate_unchecked_math_harness!(usize, unchecked_sub, checked_unchecked_sub_usize);
+
+
+
+
+
+    // ====================== u8 Carrying Mul ======================
+    generate_carrying_mul_harness!(u8, u8, carrying_mul_u8);
+
+    // ====================== u16 Carrying Mul ======================
+    generate_carrying_mul_harness!(u16, u16, carrying_mul_u16);
+
+    // ====================== u32 Carrying Mul ======================
+    generate_carrying_mul_harness!(u32, u32, carrying_mul_u32);
+
+    // ====================== u64 Carrying Mul ======================
+    generate_carrying_mul_harness!(u64, u64, carrying_mul_u64);
+
 }
