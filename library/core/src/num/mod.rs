@@ -1645,19 +1645,6 @@ mod verify {
         }
     }
 
-    // Verify `wrapping_{shl, shr}` which internally uses `unchecked_{shl,shr}`
-    macro_rules! generate_wrapping_shift_harness {
-        ($type:ty, $method:ident, $harness_name:ident) => {
-            #[kani::proof_for_contract($type::$method)]
-            pub fn $harness_name() {
-                let num1: $type = kani::any::<$type>();
-                let num2: u32 = kani::any::<u32>();
-
-                let _ = num1.$method(num2);
-            }
-        }
-    }
-
     macro_rules! generate_unchecked_neg_harness {
         ($type:ty, $harness_name:ident) => {
             #[kani::proof_for_contract($type::unchecked_neg)]
@@ -1697,6 +1684,19 @@ mod verify {
                     assert_eq!(result_high, expected_high);
                 }
             )+
+        }
+    }
+
+    // Verify `wrapping_{shl, shr}` which internally uses `unchecked_{shl,shr}`
+    macro_rules! generate_wrapping_shift_harness {
+        ($type:ty, $method:ident, $harness_name:ident) => {
+            #[kani::proof_for_contract($type::$method)]
+            pub fn $harness_name() {
+                let num1: $type = kani::any::<$type>();
+                let num2: u32 = kani::any::<u32>();
+
+                let _ = num1.$method(num2);
+            }
         }
     }
 
@@ -1928,7 +1928,7 @@ mod verify {
     // #[ensures(|result| *result == self << (rhs & (Self::BITS - 1)))]
     //
     // Target function:
-    // pub const fn wrapping_shl(self, rhs: u32) -> Self {
+    // pub const fn wrapping_shl(self, rhs: u32) -> Self
     //
     // This function performs an panic-free bitwise left shift operation.
     generate_wrapping_shift_harness!(i8, wrapping_shl, checked_wrapping_shl_i8);
