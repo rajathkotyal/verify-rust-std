@@ -1869,7 +1869,6 @@ mod verify {
     // i{8,16,32,64,128,size} and u{8,16,32,64,128,size} -- 12 types in total
     //
     // Target contracts:
-    // #[requires(rhs < Self::BITS)]
     // #[ensures(|result| *result == self << (rhs & (Self::BITS - 1)))]
     //
     // Target function:
