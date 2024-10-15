@@ -1885,29 +1885,29 @@ mod verify {
     generate_unchecked_math_harness!(usize, unchecked_sub, checked_unchecked_sub_usize);
 
 
-// ====================== u8 Harnesses ======================
-generate_carrying_mul_intervals!(u8, u16,
-    carrying_mul_u8_small, 0u8, 10u8,
-    carrying_mul_u8_large, u8::MAX - 10u8, u8::MAX
-);
+    // ====================== u8 Harnesses ======================
+    generate_carrying_mul_intervals!(u8, u16,
+        carrying_mul_u8_small, 0u8, 10u8,
+        carrying_mul_u8_large, u8::MAX - 10u8, u8::MAX
+    );
 
-// ====================== u16 Harnesses ======================
-generate_carrying_mul_intervals!(u16, u32,
-    carrying_mul_u16_small, 0u16, 10u16,
-    carrying_mul_u16_large, u16::MAX - 10u16, u16::MAX
-);
+    // ====================== u16 Harnesses ======================
+    generate_carrying_mul_intervals!(u16, u32,
+        carrying_mul_u16_small, 0u16, 10u16,
+        carrying_mul_u16_large, u16::MAX - 10u16, u16::MAX
+    );
 
-// ====================== u32 Harnesses ======================
-generate_carrying_mul_intervals!(u32, u64,
-    carrying_mul_u32_small, 0u32, 10u32,
-    carrying_mul_u32_large, u32::MAX - 10u32, u32::MAX
-);
+    // ====================== u32 Harnesses ======================
+    generate_carrying_mul_intervals!(u32, u64,
+        carrying_mul_u32_small, 0u32, 10u32,
+        carrying_mul_u32_large, u32::MAX - 10u32, u32::MAX
+    );
 
-// ====================== u64 Harnesses ======================
-generate_carrying_mul_intervals!(u64, u128,
-    carrying_mul_u64_small, 0u64, 10u64,
-    carrying_mul_u64_large, u64::MAX - 10u64, u64::MAX
-);
+    // ====================== u64 Harnesses ======================
+    generate_carrying_mul_intervals!(u64, u128,
+        carrying_mul_u64_small, 0u64, 10u64,
+        carrying_mul_u64_large, u64::MAX - 10u64, u64::MAX
+    );
 
 
 
