@@ -1658,22 +1658,38 @@ mod verify {
         }
     }
 
-    macro_rules! generate_carrying_mul_harness {
-        ($type:ty, $carry_type:ty, $harness_name:ident) => {
-            #[kani::proof_for_contract($type::carrying_mul)]
-            pub fn $harness_name() {
-                let num1: $type = kani::any::<$type>();
-                let num2: $type = kani::any::<$type>();
-                let initial_carry: $type = kani::any::<$type>();  // Add the carry value
+    macro_rules! generate_carrying_mul_intervals {
+        ($type:ty, $wide_type:ty, $($harness_name:ident, $min:expr, $max:expr),+) => {
+            $(
+                #[kani::proof]
+                pub fn $harness_name() {
+                    let lhs: $type = kani::any::<$type>();
+                    let rhs: $type = kani::any::<$type>();
+                    let carry_in: $type = kani::any::<$type>();
     
-                // Simulate carry multiplication with three arguments
-                let (result, carry) = num1.carrying_mul(num2, initial_carry); // Provide the carry as the third argument
+                    kani::assume(lhs >= $min && lhs <= $max);
+                    kani::assume(rhs >= $min && rhs <= $max);
+                    kani::assume(carry_in >= $min && carry_in <= $max);
     
-                // Check if the carry is within bounds of the carry type
-                assert!(carry <= <$carry_type>::MAX);
-            }
+                    // Perform the carrying multiplication
+                    let (result, carry_out) = lhs.carrying_mul(rhs, carry_in);
+    
+                    // Manually compute the expected result and carry using wider type
+                    let wide_result = (lhs as $wide_type)
+                        .wrapping_mul(rhs as $wide_type)
+                        .wrapping_add(carry_in as $wide_type);
+    
+                    let expected_result = wide_result as $type;
+                    let expected_carry = (wide_result >> <$type>::BITS) as $type;
+    
+                    // Assert the result and carry are correct
+                    assert_eq!(result, expected_result);
+                    assert_eq!(carry_out, expected_carry);
+                }
+            )+
         }
     }
+    
     
 
     // `unchecked_add` proofs
@@ -1869,17 +1885,30 @@ mod verify {
     generate_unchecked_math_harness!(usize, unchecked_sub, checked_unchecked_sub_usize);
 
 
-// ====================== u8 Carrying Mul ======================
-generate_carrying_mul_harness!(u8, u8, carrying_mul_u8);
+// ====================== u8 Harnesses ======================
+generate_carrying_mul_intervals!(u8, u16,
+    carrying_mul_u8_small, 0u8, 10u8,
+    carrying_mul_u8_large, u8::MAX - 10u8, u8::MAX
+);
 
-// ====================== u16 Carrying Mul ======================
-generate_carrying_mul_harness!(u16, u16, carrying_mul_u16);
+// ====================== u16 Harnesses ======================
+generate_carrying_mul_intervals!(u16, u32,
+    carrying_mul_u16_small, 0u16, 10u16,
+    carrying_mul_u16_large, u16::MAX - 10u16, u16::MAX
+);
 
-// ====================== u32 Carrying Mul ======================
-generate_carrying_mul_harness!(u32, u32, carrying_mul_u32);
+// ====================== u32 Harnesses ======================
+generate_carrying_mul_intervals!(u32, u64,
+    carrying_mul_u32_small, 0u32, 10u32,
+    carrying_mul_u32_large, u32::MAX - 10u32, u32::MAX
+);
 
-// ====================== u64 Carrying Mul ======================
-generate_carrying_mul_harness!(u64, u64, carrying_mul_u64);
+// ====================== u64 Harnesses ======================
+generate_carrying_mul_intervals!(u64, u128,
+    carrying_mul_u64_small, 0u64, 10u64,
+    carrying_mul_u64_large, u64::MAX - 10u64, u64::MAX
+);
+
 
 
 }
