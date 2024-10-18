@@ -1657,7 +1657,18 @@ mod verify {
             }
         }
     }
-
+    
+    /// A macro to generate Kani proof harnesses for the `carrying_mul` method,
+    ///
+    /// The macro creates multiple harnesses for different ranges of input values,
+    /// allowing testing of both small and large inputs.
+    ///
+    /// # Parameters:
+    /// - `$type`: The integer type (e.g., u8, u16) for which the `carrying_mul` function is being tested.
+    /// - `$wide_type`: A wider type to simulate the multiplication (e.g., u16 for u8, u32 for u16).
+    /// - `$harness_name`: The name of the Kani harness to be generated.
+    /// - `$min`: The minimum value for the range of inputs for `lhs`, `rhs`, and `carry_in`.
+    /// - `$max`: The maximum value for the range of inputs for `lhs`, `rhs`, and `carry_in`.
     macro_rules! generate_carrying_mul_intervals {
         ($type:ty, $wide_type:ty, $($harness_name:ident, $min:expr, $max:expr),+) => {
             $(
@@ -1886,6 +1897,7 @@ mod verify {
 
 
     // ====================== u8 Harnesses ======================
+    /// Kani proof harness for `carrying_mul` on `u8` type with small values.
     generate_carrying_mul_intervals!(u8, u16,
         carrying_mul_u8_small, 0u8, 10u8,
         carrying_mul_u8_large, u8::MAX - 10u8, u8::MAX
