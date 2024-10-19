@@ -1645,19 +1645,6 @@ mod verify {
         }
     }
 
-    // Verify `wrapping_{shl, shr}` which internally uses `unchecked_{shl,shr}`
-    macro_rules! generate_wrapping_shift_harness {
-        ($type:ty, $method:ident, $harness_name:ident) => {
-            #[kani::proof_for_contract($type::$method)]
-            pub fn $harness_name() {
-                let num1: $type = kani::any::<$type>();
-                let num2: u32 = kani::any::<u32>();
-
-                let _ = num1.$method(num2);
-            }
-        }
-    }
-
     macro_rules! generate_unchecked_neg_harness {
         ($type:ty, $harness_name:ident) => {
             #[kani::proof_for_contract($type::unchecked_neg)]
@@ -1667,6 +1654,48 @@ mod verify {
                 unsafe {
                     num1.unchecked_neg();
                 }
+            }
+        }
+    }
+
+    // Part 2 : Nested unsafe functions Generation Macros --> https://github.com/verify-rust-std/blob/main/doc/src/challenges/0011-floats-ints.md
+
+    // Verify `widening_mul`, which internally uses `unchecked_mul`
+    macro_rules! generate_widening_mul_intervals {
+        ($type:ty, $wide_type:ty, $($harness_name:ident, $min:expr, $max:expr),+) => {
+            $(
+                #[kani::proof]
+                pub fn $harness_name() {
+                    let lhs: $type = kani::any::<$type>();
+                    let rhs: $type = kani::any::<$type>();
+
+                    kani::assume(lhs >= $min && lhs <= $max);
+                    kani::assume(rhs >= $min && rhs <= $max);
+
+                    let (result_low, result_high) = lhs.widening_mul(rhs);
+
+                    // Compute expected result using wider type
+                    let expected = (lhs as $wide_type) * (rhs as $wide_type);
+
+                    let expected_low = expected as $type;
+                    let expected_high = (expected >> <$type>::BITS) as $type;
+
+                    assert_eq!(result_low, expected_low);
+                    assert_eq!(result_high, expected_high);
+                }
+            )+
+        }
+    }
+
+    // Verify `wrapping_{shl, shr}` which internally uses `unchecked_{shl,shr}`
+    macro_rules! generate_wrapping_shift_harness {
+        ($type:ty, $method:ident, $harness_name:ident) => {
+            #[kani::proof_for_contract($type::$method)]
+            pub fn $harness_name() {
+                let num1: $type = kani::any::<$type>();
+                let num2: u32 = kani::any::<u32>();
+
+                let _ = num1.$method(num2);
             }
         }
     }
@@ -1863,17 +1892,43 @@ mod verify {
     generate_unchecked_math_harness!(u128, unchecked_sub, checked_unchecked_sub_u128);
     generate_unchecked_math_harness!(usize, unchecked_sub, checked_unchecked_sub_usize);
 
+    
+    // Part 2 : Proof harnesses 
+    
+    // ====================== u8 Harnesses ======================
+    generate_widening_mul_intervals!(u8, u16, widening_mul_u8, 0u8, u8::MAX);
+    
+    // ====================== u16 Harnesses ======================
+    generate_widening_mul_intervals!(u16, u32,
+        widening_mul_u16_small, 0u16, 10u16,
+        widening_mul_u16_large, u16::MAX - 10u16, u16::MAX,
+        widening_mul_u16_mid_edge, (u16::MAX / 2) - 10u16, (u16::MAX / 2) + 10u16
+    );
+
+    // ====================== u32 Harnesses ======================
+    generate_widening_mul_intervals!(u32, u64,
+        widening_mul_u32_small, 0u32, 10u32,
+        widening_mul_u32_large, u32::MAX - 10u32, u32::MAX,
+        widening_mul_u32_mid_edge, (u32::MAX / 2) - 10u32, (u32::MAX / 2) + 10u32
+    );
+
+    // ====================== u64 Harnesses ======================
+    generate_widening_mul_intervals!(u64, u128,
+        widening_mul_u64_small, 0u64, 10u64,
+        widening_mul_u64_large, u64::MAX - 10u64, u64::MAX,
+        widening_mul_u64_mid_edge, (u64::MAX / 2) - 10u64, (u64::MAX / 2) + 10u64
+    );
+
     // `wrapping_shl` proofs
     //
     // Target types:
     // i{8,16,32,64,128,size} and u{8,16,32,64,128,size} -- 12 types in total
     //
     // Target contracts:
-    // #[requires(rhs < Self::BITS)]
     // #[ensures(|result| *result == self << (rhs & (Self::BITS - 1)))]
     //
     // Target function:
-    // pub const fn wrapping_shl(self, rhs: u32) -> Self {
+    // pub const fn wrapping_shl(self, rhs: u32) -> Self
     //
     // This function performs an panic-free bitwise left shift operation.
     generate_wrapping_shift_harness!(i8, wrapping_shl, checked_wrapping_shl_i8);
