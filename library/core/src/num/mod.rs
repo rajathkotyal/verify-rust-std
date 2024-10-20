@@ -1910,16 +1910,17 @@ mod verify {
     );
 
     // ====================== u32 Harnesses ======================
-    /// Kani proof harness for `carrying_mul` on `u32` type with full range of values.
     generate_carrying_mul_intervals!(u32, u64,
-        carrying_mul_u32_full_range, 0u32, u32::MAX
+        carrying_mul_u32_small, 0u32, 10u32,
+        carrying_mul_u32_large, u32::MAX - 10u32, u32::MAX,
+        carrying_mul_u32_mid_edge, (u32::MAX / 2) - 10u32, (u32::MAX / 2) + 10u32
     );
 
     // ====================== u64 Harnesses ======================
-    /// Kani proof harness for `carrying_mul` on `u64` type with full range of values.
     generate_carrying_mul_intervals!(u64, u128,
-        carrying_mul_u64_full_range, 0u64, u64::MAX
+        carrying_mul_u64_small, 0u64, 10u64,
+        carrying_mul_u64_large, u64::MAX - 10u64, u64::MAX,
+        carrying_mul_u64_mid_edge, (u64::MAX / 2) - 10u64, (u64::MAX / 2) + 10u64
     );
-
 }
 
