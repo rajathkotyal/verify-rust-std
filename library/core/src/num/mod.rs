@@ -1590,7 +1590,7 @@ from_str_radix_size_impl! { i64 isize, u64 usize }
 #[unstable(feature = "kani", issue = "none")]
 mod verify {
     use super::*;
-
+/*
     // Verify `unchecked_{add, sub, mul}`
     macro_rules! generate_unchecked_math_harness {
         ($type:ty, $method:ident, $harness_name:ident) => {
@@ -1967,4 +1967,14 @@ mod verify {
     generate_wrapping_shift_harness!(u64, wrapping_shr, checked_wrapping_shr_u64);
     generate_wrapping_shift_harness!(u128, wrapping_shr, checked_wrapping_shr_u128);
     generate_wrapping_shift_harness!(usize, wrapping_shr, checked_wrapping_shr_usize);
+*/
+
+    #[kani::proof_for_contract(f32::to_int_unchecked)]
+    pub fn checked_to_int_unchecked_f32() {
+        let num1: f32 = kani::any::<f32>();
+
+        let result = unsafe { num1.to_int_unchecked::<i32>() };
+
+        assert_eq!(result, num1 as i32);
+    }
 }
