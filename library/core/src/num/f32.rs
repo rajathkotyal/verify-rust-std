@@ -1091,8 +1091,8 @@ impl f32 {
                   without modifying the original"]
     #[stable(feature = "float_approx_unchecked_to", since = "1.44.0")]
     #[inline]
-    #[requires(!self.is_nan() && !self.is_infinite())]
-    #[requires(self >= Self::MIN && self <= Self::MAX)]
+    // is_finite() checks if the given float is neither infinite nor NaN.
+    #[requires(self.is_finite() && self >= Self::MIN && self <= Self::MAX)]
     pub unsafe fn to_int_unchecked<Int>(self) -> Int
     where
         Self: FloatToInt<Int>,
