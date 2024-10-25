@@ -1703,6 +1703,48 @@ mod verify {
     
     
 
+    // Part 2 : Nested unsafe functions Generation Macros --> https://github.com/verify-rust-std/blob/main/doc/src/challenges/0011-floats-ints.md
+
+    // Verify `widening_mul`, which internally uses `unchecked_mul`
+    macro_rules! generate_widening_mul_intervals {
+        ($type:ty, $wide_type:ty, $($harness_name:ident, $min:expr, $max:expr),+) => {
+            $(
+                #[kani::proof]
+                pub fn $harness_name() {
+                    let lhs: $type = kani::any::<$type>();
+                    let rhs: $type = kani::any::<$type>();
+
+                    kani::assume(lhs >= $min && lhs <= $max);
+                    kani::assume(rhs >= $min && rhs <= $max);
+
+                    let (result_low, result_high) = lhs.widening_mul(rhs);
+
+                    // Compute expected result using wider type
+                    let expected = (lhs as $wide_type) * (rhs as $wide_type);
+
+                    let expected_low = expected as $type;
+                    let expected_high = (expected >> <$type>::BITS) as $type;
+
+                    assert_eq!(result_low, expected_low);
+                    assert_eq!(result_high, expected_high);
+                }
+            )+
+        }
+    }
+
+    // Verify `wrapping_{shl, shr}` which internally uses `unchecked_{shl,shr}`
+    macro_rules! generate_wrapping_shift_harness {
+        ($type:ty, $method:ident, $harness_name:ident) => {
+            #[kani::proof_for_contract($type::$method)]
+            pub fn $harness_name() {
+                let num1: $type = kani::any::<$type>();
+                let num2: u32 = kani::any::<u32>();
+
+                let _ = num1.$method(num2);
+            }
+        }
+    }
+
     // `unchecked_add` proofs
     //
     // Target types:
@@ -1744,7 +1786,7 @@ mod verify {
     generate_unchecked_neg_harness!(i128, checked_unchecked_neg_i128);
     generate_unchecked_neg_harness!(isize, checked_unchecked_neg_isize);
 
-    // unchecked_mul proofs
+    // `unchecked_mul` proofs
     //
     // Target types:
     // i{8,16,32,64,128,size} and u{8,16,32,64,128,size} -- 12 types in total, with different interval checks for each.
@@ -1895,7 +1937,8 @@ mod verify {
     generate_unchecked_math_harness!(u128, unchecked_sub, checked_unchecked_sub_u128);
     generate_unchecked_math_harness!(usize, unchecked_sub, checked_unchecked_sub_usize);
 
-    // Part2 `carrying_mul` proofs 
+
+    // Part_2 `carrying_mul` proofs 
     // 
     // ====================== u8 Harnesses ======================
     /// Kani proof harness for `carrying_mul` on `u8` type with full range of values.
@@ -1922,5 +1965,82 @@ mod verify {
         carrying_mul_u64_large, u64::MAX - 10u64, u64::MAX,
         carrying_mul_u64_mid_edge, (u64::MAX / 2) - 10u64, (u64::MAX / 2) + 10u64
     );
+
+    
+    // Part_2 `widening_mul` proofs
+    
+    // ====================== u8 Harnesses ======================
+    generate_widening_mul_intervals!(u8, u16, widening_mul_u8, 0u8, u8::MAX);
+    
+    // ====================== u16 Harnesses ======================
+    generate_widening_mul_intervals!(u16, u32,
+        widening_mul_u16_small, 0u16, 10u16,
+        widening_mul_u16_large, u16::MAX - 10u16, u16::MAX,
+        widening_mul_u16_mid_edge, (u16::MAX / 2) - 10u16, (u16::MAX / 2) + 10u16
+    );
+
+    // ====================== u32 Harnesses ======================
+    generate_widening_mul_intervals!(u32, u64,
+        widening_mul_u32_small, 0u32, 10u32,
+        widening_mul_u32_large, u32::MAX - 10u32, u32::MAX,
+        widening_mul_u32_mid_edge, (u32::MAX / 2) - 10u32, (u32::MAX / 2) + 10u32
+    );
+
+    // ====================== u64 Harnesses ======================
+    generate_widening_mul_intervals!(u64, u128,
+        widening_mul_u64_small, 0u64, 10u64,
+        widening_mul_u64_large, u64::MAX - 10u64, u64::MAX,
+        widening_mul_u64_mid_edge, (u64::MAX / 2) - 10u64, (u64::MAX / 2) + 10u64
+    );
+
+    // Part_2 `wrapping_shl` proofs
+    //
+    // Target types:
+    // i{8,16,32,64,128,size} and u{8,16,32,64,128,size} -- 12 types in total
+    //
+    // Target contracts:
+    // #[ensures(|result| *result == self << (rhs & (Self::BITS - 1)))]
+    //
+    // Target function:
+    // pub const fn wrapping_shl(self, rhs: u32) -> Self
+    //
+    // This function performs an panic-free bitwise left shift operation.
+    generate_wrapping_shift_harness!(i8, wrapping_shl, checked_wrapping_shl_i8);
+    generate_wrapping_shift_harness!(i16, wrapping_shl, checked_wrapping_shl_i16);
+    generate_wrapping_shift_harness!(i32, wrapping_shl, checked_wrapping_shl_i32);
+    generate_wrapping_shift_harness!(i64, wrapping_shl, checked_wrapping_shl_i64);
+    generate_wrapping_shift_harness!(i128, wrapping_shl, checked_wrapping_shl_i128);
+    generate_wrapping_shift_harness!(isize, wrapping_shl, checked_wrapping_shl_isize);
+    generate_wrapping_shift_harness!(u8, wrapping_shl, checked_wrapping_shl_u8);
+    generate_wrapping_shift_harness!(u16, wrapping_shl, checked_wrapping_shl_u16);
+    generate_wrapping_shift_harness!(u32, wrapping_shl, checked_wrapping_shl_u32);
+    generate_wrapping_shift_harness!(u64, wrapping_shl, checked_wrapping_shl_u64);
+    generate_wrapping_shift_harness!(u128, wrapping_shl, checked_wrapping_shl_u128);
+    generate_wrapping_shift_harness!(usize, wrapping_shl, checked_wrapping_shl_usize);
+
+    // Part_2 `wrapping_shr` proofs
+    //
+    // Target types:
+    // i{8,16,32,64,128,size} and u{8,16,32,64,128,size} -- 12 types in total
+    //
+    // Target contracts:
+    // #[ensures(|result| *result == self >> (rhs & (Self::BITS - 1)))]
+    // Target function:
+    // pub const fn wrapping_shr(self, rhs: u32) -> Self {
+    //
+    // This function performs an panic-free bitwise right shift operation.
+    generate_wrapping_shift_harness!(i8, wrapping_shr, checked_wrapping_shr_i8);
+    generate_wrapping_shift_harness!(i16, wrapping_shr, checked_wrapping_shr_i16);
+    generate_wrapping_shift_harness!(i32, wrapping_shr, checked_wrapping_shr_i32);
+    generate_wrapping_shift_harness!(i64, wrapping_shr, checked_wrapping_shr_i64);
+    generate_wrapping_shift_harness!(i128, wrapping_shr, checked_wrapping_shr_i128);
+    generate_wrapping_shift_harness!(isize, wrapping_shr, checked_wrapping_shr_isize);
+    generate_wrapping_shift_harness!(u8, wrapping_shr, checked_wrapping_shr_u8);
+    generate_wrapping_shift_harness!(u16, wrapping_shr, checked_wrapping_shr_u16);
+    generate_wrapping_shift_harness!(u32, wrapping_shr, checked_wrapping_shr_u32);
+    generate_wrapping_shift_harness!(u64, wrapping_shr, checked_wrapping_shr_u64);
+    generate_wrapping_shift_harness!(u128, wrapping_shr, checked_wrapping_shr_u128);
+    generate_wrapping_shift_harness!(usize, wrapping_shr, checked_wrapping_shr_usize);
+
 }
 
