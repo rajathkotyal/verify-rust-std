@@ -2085,6 +2085,21 @@ mod verify {
         usize, checked_f32_to_int_unchecked_usize
     );
 
+    generate_to_int_unchecked_harness!(f64,
+        i8, checked_f64_to_int_unchecked_i8,
+        i16, checked_f64_to_int_unchecked_i16,
+        i32, checked_f64_to_int_unchecked_i32,
+        i64, checked_f64_to_int_unchecked_i64,
+        i128, checked_f64_to_int_unchecked_i128,
+        isize, checked_f64_to_int_unchecked_isize,
+        u8, checked_f64_to_int_unchecked_u8,
+        u16, checked_f64_to_int_unchecked_u16,
+        u32, checked_f64_to_int_unchecked_u32,
+        u64, checked_f64_to_int_unchecked_u64,
+        u128, checked_f64_to_int_unchecked_u128,
+        usize, checked_f64_to_int_unchecked_usize
+    );
+    
     generate_to_int_unchecked_harness!(f128,
         i8, checked_f128_to_int_unchecked_i8,
         i16, checked_f128_to_int_unchecked_i16,
