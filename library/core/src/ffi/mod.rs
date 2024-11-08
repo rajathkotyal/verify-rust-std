@@ -223,3 +223,28 @@ impl fmt::Debug for c_void {
 )]
 #[link(name = "/defaultlib:libcmt", modifiers = "+verbatim", cfg(target_feature = "crt-static"))]
 extern "C" {}
+
+// Invariant Trait for validating cStr
+pub trait Invariant {
+    fn invariant(&self) -> bool;
+}
+
+// Implement the Invariant trait for CStr
+impl Invariant for CStr {
+    fn invariant(&self) -> bool {
+        let bytes = self.to_bytes_with_nul();
+
+        // Checking here that the last byte is a null terminator
+        if bytes.is_empty() || bytes[bytes.len() - 1] != 0 {
+            return false;
+        }
+
+        // Checking here if there are any 
+        // interior null bytes (excluding the last byte)
+        if bytes[..bytes.len() - 1].contains(&0) {
+            return false;
+        }
+
+        true
+    }
+}
