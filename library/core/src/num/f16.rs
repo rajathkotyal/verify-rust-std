@@ -17,6 +17,10 @@ use crate::intrinsics;
 use crate::mem;
 use crate::num::FpCategory;
 
+use safety::{requires, ensures};
+
+#[cfg(kani)]
+use crate::kani;
 /// Basic mathematical constants.
 #[unstable(feature = "f16", issue = "116909")]
 pub mod consts {
@@ -894,6 +898,8 @@ impl f16 {
     /// # }
     /// ```
     #[inline]
+    #[requires(!self.is_nan() && !self.is_infinite())]
+    #[requires(self >= Self::MIN && self <= Self::MAX)]
     #[unstable(feature = "f16", issue = "116909")]
     #[must_use = "this returns the result of the operation, without modifying the original"]
     pub const fn to_bits(self) -> u16 {
