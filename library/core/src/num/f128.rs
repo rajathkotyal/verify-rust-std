@@ -16,9 +16,6 @@ use crate::convert::FloatToInt;
 use crate::intrinsics;
 use crate::mem;
 use crate::num::FpCategory;
-use safety::{requires, ensures};
-#[cfg(kani)]
-use crate::kani;
 
 /// Basic mathematical constants.
 #[unstable(feature = "f128", issue = "116909")]
@@ -884,8 +881,6 @@ impl f128 {
     #[inline]
     #[unstable(feature = "f128", issue = "116909")]
     #[must_use = "this returns the result of the operation, without modifying the original"]
-    // is_finite() checks if the given float is neither infinite nor NaN.
-    #[requires(self.is_finite() && self >= Self::MIN && self <= Self::MAX)]
     pub unsafe fn to_int_unchecked<Int>(self) -> Int
     where
         Self: FloatToInt<Int>,
