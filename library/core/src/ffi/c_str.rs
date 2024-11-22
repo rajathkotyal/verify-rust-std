@@ -10,6 +10,7 @@ use crate::slice::memchr;
 use crate::{fmt, intrinsics, ops, slice, str};
 
 // use safety::{requires, ensures};
+use crate::ub_checks::Invariant;
 
 #[cfg(kani)]
 use crate::kani;
@@ -105,9 +106,6 @@ use crate::kani;
 // want `repr(transparent)` but we don't want it to show up in rustdoc, so we hide it under
 // `cfg(doc)`. This is an ad-hoc implementation of attribute privacy.
 #[repr(transparent)]
-#[derive(kani::Arbitrary)]
-#[derive(kani::Invariant)]
-#[safety_constraint(inner.len() > 0 && inner[inner.len() - 1] == 0 && !inner[..inner.len() - 1].contains(&0))]
 pub struct CStr {
     // FIXME: this should not be represented with a DST slice but rather with
     //        just a raw `c_char` along with some form of marker to make
@@ -212,6 +210,23 @@ impl fmt::Display for FromBytesWithNulError {
             write!(f, " at byte pos {pos}")?;
         }
         Ok(())
+    }
+}
+
+#[unstable(feature = "ub_checks", issue = "none")]
+impl Invariant for &CStr {
+    fn is_safe(&self) -> bool {
+        let bytes: &[c_char] = &self.inner;
+        let len = bytes.len();
+
+        // An empty CStr should has a null byte.
+        // A valid CStr should end with a null-terminator and contains
+        // no intermediate null bytes.
+        if bytes.is_empty() || bytes[len - 1] != 0 || bytes[..len-1].contains(&0) {
+            return false;
+        }
+
+        true
     }
 }
 
@@ -841,3 +856,49 @@ impl Iterator for Bytes<'_> {
 
 #[unstable(feature = "cstr_bytes", issue = "112115")]
 impl FusedIterator for Bytes<'_> {}
+
+#[cfg(kani)]
+#[unstable(feature = "kani", issue = "none")]
+mod verify {
+    use super::*;
+
+    // pub const fn from_bytes_until_nul(bytes: &[u8]) -> Result<&CStr, FromBytesUntilNulError>
+    #[kani::proof]
+    #[kani::unwind(32)]  // Proof bounded by array length
+    fn check_from_bytes_until_nul_random_nul_byte() {
+        const ARR_LEN: usize = 1000;
+        let mut string: [u8; ARR_LEN] = kani::any();
+
+        // ensure that there is at least one null byte
+        let idx: usize = kani::any_where(|x: &usize| *x >= 0 && *x < ARR_LEN);
+        string[idx] = 0;
+
+        let c_str = CStr::from_bytes_until_nul(&string).unwrap();
+        assert!(c_str.is_safe());
+    }
+
+    #[kani::proof]
+    #[kani::unwind(32)]  // Proof bounded by array length
+    fn check_from_bytes_until_nul_single_nul_byte_end() {
+        const ARR_LEN: usize = 1000;
+        // ensure that the string does not have intermediate null bytes
+        let mut string: [u8; ARR_LEN] = kani::any_where(|x: &[u8; ARR_LEN]| !x[..ARR_LEN-1].contains(&0));
+        // ensure that the string is properly null-terminated
+        string[ARR_LEN - 1] = 0;
+
+        let c_str = CStr::from_bytes_until_nul(&string).unwrap();
+        assert!(c_str.is_safe());
+    }
+
+    #[kani::proof]
+    #[kani::unwind(8)]  // Proof bounded by array length
+    fn check_from_bytes_until_nul_single_nul_byte_head() {
+        const ARR_LEN: usize = 8;
+        let mut string: [u8; ARR_LEN] = kani::any();
+        // The first byte is a null byte should result in an empty CStr.
+        string[0] = 0;
+
+        let c_str = CStr::from_bytes_until_nul(&string).unwrap();
+        assert!(c_str.is_safe());
+    }
+}

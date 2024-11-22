@@ -20,11 +20,6 @@ pub use self::c_str::FromBytesUntilNulError;
 pub use self::c_str::FromBytesWithNulError;
 use crate::fmt;
 
-use safety::{requires, ensures};
-
-#[cfg(kani)]
-use crate::kani;
-
 #[unstable(feature = "c_str_module", issue = "112134")]
 pub mod c_str;
 
@@ -228,24 +223,3 @@ impl fmt::Debug for c_void {
 )]
 #[link(name = "/defaultlib:libcmt", modifiers = "+verbatim", cfg(target_feature = "crt-static"))]
 extern "C" {}
-
-#[cfg(kani)]
-#[unstable(feature = "kani", issue = "none")]
-mod verify {
-    use super::*;
-
-    // pub const fn from_bytes_until_nul(bytes: &[u8]) -> Result<&CStr, FromBytesUntilNulError>
-    #[kani::proof]
-    #[kani::unwind(16)]  // Proof bounded by array length
-    fn check_from_bytes_until_nul() {
-        const ARR_LEN: usize = 16;
-        let mut string: [u8; ARR_LEN] = kani::any();
-        // ensure that there is at least one null byte
-        let idx: usize = kani::any_where(|x| *x >= 0 && *x < ARR_LEN);
-        string[idx] = 0;
-
-        let c_str = CStr::from_bytes_until_nul(&string).unwrap();
-        assert!(c_str.is_safe());
-    }
-
-}
