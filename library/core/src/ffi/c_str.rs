@@ -9,6 +9,11 @@ use crate::ptr::NonNull;
 use crate::slice::memchr;
 use crate::{fmt, intrinsics, ops, slice, str};
 
+// use safety::{requires, ensures};
+
+#[cfg(kani)]
+use crate::kani;
+
 // FIXME: because this is doc(inline)d, we *have* to use intra-doc links because the actual link
 //   depends on where the item is being documented. however, since this is libcore, we can't
 //   actually reference libstd or liballoc in intra-doc links. so, the best we can do is remove the
@@ -100,6 +105,9 @@ use crate::{fmt, intrinsics, ops, slice, str};
 // want `repr(transparent)` but we don't want it to show up in rustdoc, so we hide it under
 // `cfg(doc)`. This is an ad-hoc implementation of attribute privacy.
 #[repr(transparent)]
+#[derive(kani::Arbitrary)]
+#[derive(kani::Invariant)]
+#[safety_constraint(inner.len() > 0 && inner[inner.len() - 1] == 0 && !inner[..inner.len() - 1].contains(&0))]
 pub struct CStr {
     // FIXME: this should not be represented with a DST slice but rather with
     //        just a raw `c_char` along with some form of marker to make
