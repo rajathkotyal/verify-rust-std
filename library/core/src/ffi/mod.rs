@@ -223,23 +223,3 @@ impl fmt::Debug for c_void {
 )]
 #[link(name = "/defaultlib:libcmt", modifiers = "+verbatim", cfg(target_feature = "crt-static"))]
 extern "C" {}
-
-#[cfg(kani)]
-#[unstable(feature = "kani", issue = "none")]
-mod verify {
-    use super::*;
-
-    #[kani::proof]
-    #[kani::unwind(16)]
-    fn check_count_bytes() {
-        const MAX_LEN: usize = 128; // Define maximum length for testing
-        let mut input: [u8; MAX_LEN] = kani::any(); // Generate random byte array
-        let len: usize = kani::any_where(|&x| x < MAX_LEN); // Choose a valid string length
-        input[len] = 0; // Null terminator
-
-        // Trim the array
-        let cstr = CStr::from_bytes_with_nul(&input[..=len]).unwrap();
-
-        assert_eq!(cstr.count_bytes(), len);
-    }
-}

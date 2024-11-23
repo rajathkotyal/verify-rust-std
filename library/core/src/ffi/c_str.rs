@@ -910,4 +910,25 @@ mod verify {
         let c_str = CStr::from_bytes_until_nul(&string).unwrap();
         assert!(c_str.is_safe());
     }
+
+    #[kani::proof]
+    #[kani::unwind(16)]
+    fn check_count_bytes() {
+        const MAX_LEN: usize = 16;
+        let mut string: [u8; MAX_LEN] = kani::any();
+    
+        // Ensure that the string does not contain NUL bytes before the chosen length
+        let len: usize = kani::any_where(|&x| x < MAX_LEN);
+        for i in 0..len {
+            kani::assume(string[i] != 0);
+        }
+    
+        // Insert a NUL byte at the specified length
+        string[len] = 0;
+    
+        let c_str = CStr::from_bytes_until_nul(&string).unwrap();
+    
+        // Verify that count_bytes matches the chosen length
+        assert_eq!(c_str.count_bytes(), len);
+    }
 }
