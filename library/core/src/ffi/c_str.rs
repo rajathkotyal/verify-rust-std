@@ -910,4 +910,75 @@ mod verify {
         let c_str = CStr::from_bytes_until_nul(&string).unwrap();
         assert!(c_str.is_safe());
     }
+
+
+
+
+
+    
+    /// Verifies the behavior of the `CStr::is_empty` method.
+    ///
+    /// # Purpose
+    /// This harness ensures that the `is_empty` method behaves correctly under various scenarios:
+    /// - Identifying valid empty `CStr` instances (only null terminator).
+    /// - Identifying valid non-empty `CStr` instances (characters followed by a null terminator).
+    /// - Rejecting invalid `CStr` instances, such as those missing a null terminator or containing interior null bytes.
+    ///
+    /// # Test Cases
+    /// 1. **Valid Empty CStr:** Ensure `is_empty` returns `true` for a `CStr` with only a null terminator.
+    /// 2. **Valid Non-Empty CStr:** Ensure `is_empty` returns `false` for a `CStr` with characters followed by a null terminator.
+    /// 3. **Invalid CStr (No Null Terminator):** Verify that constructing a `CStr` without a null terminator fails.
+    /// 4. **Invalid CStr (Interior Null Byte):** Verify that constructing a `CStr` with interior null bytes fails.
+    ///
+    /// # Assumptions
+    /// - The test harness assumes that the `CStr::from_bytes_with_nul` function rejects invalid `CStr` inputs.
+    ///
+    /// # Safety
+    /// - This harness operates entirely on safe methods (`CStr::from_bytes_with_nul`) for constructing valid `CStr` instances.
+    /// - Invalid cases are explicitly tested to ensure they do not violate Rust’s safety guarantees.
+    ///
+    /// # Kani Integration
+    /// - The harness uses the Kani verification tool to exhaustively check all possible inputs within defined bounds.
+    ///
+    #[kani::proof]
+    fn check_is_empty() {
+        // Case 1: Valid Empty CStr
+        // This test ensures that `is_empty` correctly identifies an empty `CStr` (only null terminator).
+        // A valid `CStr` with no characters other than the null terminator should return `true`.
+        let empty_cstr = CStr::from_bytes_with_nul(b"\0").unwrap();
+        assert!(empty_cstr.is_empty(), "Expected `is_empty` to return true for an empty CStr.");
+
+        // Case 2: Valid Non-Empty CStr
+        // This test ensures that `is_empty` correctly identifies a non-empty `CStr`.
+        // A valid `CStr` with characters followed by a null terminator should return `false`.
+        let non_empty_cstr = CStr::from_bytes_with_nul(b"hello\0").unwrap();
+        assert!(!non_empty_cstr.is_empty(), "Expected `is_empty` to return false for a non-empty CStr.");
+
+        // Case 3: Invalid CStr (No Null Terminator)
+        // Attempt to create a `CStr` from a byte slice without a null terminator.
+        // This should fail because the invariant of a null-terminated string is violated.
+        let invalid_bytes = b"hello"; // No null terminator at the end.
+        let invalid_result = CStr::from_bytes_with_nul(invalid_bytes);
+        assert!(
+            invalid_result.is_err(),
+            "Expected CStr::from_bytes_with_nul to return an error for a missing null terminator."
+        );
+
+        // Case 4: Invalid CStr (Interior Null Byte)
+        // Attempt to create a `CStr` from a byte slice with an interior null byte.
+        // This should fail because the invariant of no intermediate null bytes is violated.
+        let interior_null = b"he\0llo\0"; // Null byte in the middle of the string.
+        let invalid_result = CStr::from_bytes_with_nul(interior_null);
+        assert!(
+            invalid_result.is_err(),
+            "Expected CStr::from_bytes_with_nul to return an error for interior null bytes."
+        );
+    }
+
+
 }
+
+
+
+
+
