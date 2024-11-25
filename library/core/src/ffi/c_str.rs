@@ -863,51 +863,19 @@ mod verify {
     use super::*;
 
     // pub const fn from_bytes_until_nul(bytes: &[u8]) -> Result<&CStr, FromBytesUntilNulError>
-    // Check 1: A random index in a u8 array is guaranteed to be a null byte
-    // Check 2: Only the last byte of a u8 array is a null byte
-    // Check 3: The first byte of a u8 array is a null byte
-    //
-    // Proofs are bounded (kani::unwind) by the length of the input array.
-    // Check 1: 2.08 sec when 32; 7.49 sec when 40
-    // Check 2: 6.72 sec when 32; 9.2 sec when 40
-    // Check 3: 0.33 sec when 8; 2.06 sec when 16
     #[kani::proof]
-    #[kani::unwind(32)]
-    fn check_from_bytes_until_nul_random_nul_byte() {
-        const ARR_LEN: usize = 32;
-        let mut string: [u8; ARR_LEN] = kani::any();
+    #[kani::unwind(16)] // 7.3 seconds when 16; 33.1 seconds when 32
+    fn check_from_bytes_until_nul() {
+        const MAX_SIZE: usize = 16;
+        let string: [u8; MAX_SIZE] = kani::any();
+        // Covers the case of a single null byte at the end, no null bytes, as
+        // well as intermediate null bytes
+        let slice = kani::slice::any_slice_of_array(&string);
 
-        // ensure that there is at least one null byte
-        let idx: usize = kani::any_where(|x: &usize| *x >= 0 && *x < ARR_LEN);
-        string[idx] = 0;
-
-        let c_str = CStr::from_bytes_until_nul(&string).unwrap();
-        assert!(c_str.is_safe());
-    }
-
-    #[kani::proof]
-    #[kani::unwind(32)]
-    fn check_from_bytes_until_nul_single_nul_byte_end() {
-        const ARR_LEN: usize = 32;
-        // ensure that the string does not have intermediate null bytes
-        // TODO: there might be a better way
-        let mut string: [u8; ARR_LEN] = kani::any_where(|x: &[u8; ARR_LEN]| !x[..ARR_LEN-1].contains(&0));
-        // ensure that the string is properly null-terminated
-        string[ARR_LEN - 1] = 0;
-
-        let c_str = CStr::from_bytes_until_nul(&string).unwrap();
-        assert!(c_str.is_safe());
-    }
-
-    #[kani::proof]
-    #[kani::unwind(16)]
-    fn check_from_bytes_until_nul_single_nul_byte_head() {
-        const ARR_LEN: usize = 16;
-        let mut string: [u8; ARR_LEN] = kani::any();
-        // The first byte is a null byte should result in an empty CStr.
-        string[0] = 0;
-
-        let c_str = CStr::from_bytes_until_nul(&string).unwrap();
-        assert!(c_str.is_safe());
+        let result = CStr::from_bytes_until_nul(slice);
+        if result.is_ok() {
+            let c_str = result.unwrap();
+            assert!(c_str.is_safe());
+        }
     }
 }
