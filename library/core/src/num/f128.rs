@@ -885,7 +885,7 @@ impl f128 {
     #[unstable(feature = "f128", issue = "116909")]
     #[must_use = "this returns the result of the operation, without modifying the original"]
     // is_finite() checks if the given float is neither infinite nor NaN.
-    #[requires(self.is_finite() && self >= Self::MIN && self <= Self::MAX)]
+    #[requires(self.is_finite() && /* FIXME */)]
     pub unsafe fn to_int_unchecked<Int>(self) -> Int
     where
         Self: FloatToInt<Int>,

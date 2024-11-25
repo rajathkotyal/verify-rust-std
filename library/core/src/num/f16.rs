@@ -869,6 +869,7 @@ impl f16 {
     #[inline]
     #[unstable(feature = "f16", issue = "116909")]
     #[must_use = "this returns the result of the operation, without modifying the original"]
+    #[requires(self.is_finite() && /* FIXME */)]
     pub unsafe fn to_int_unchecked<Int>(self) -> Int
     where
         Self: FloatToInt<Int>,
@@ -898,8 +899,6 @@ impl f16 {
     /// # }
     /// ```
     #[inline]
-    #[requires(!self.is_nan() && !self.is_infinite())]
-    #[requires(self >= Self::MIN && self <= Self::MAX)]
     #[unstable(feature = "f16", issue = "116909")]
     #[must_use = "this returns the result of the operation, without modifying the original"]
     pub const fn to_bits(self) -> u16 {
