@@ -2164,7 +2164,7 @@ pub mod verify {
     // 1. Float is not `NaN` and infinite
     // 2. Float is representable in the return type `Int`, after truncating
     //    off its fractional part
-    // [requires(self.is_finite() && self >= Self::MIN && self <= Self::MAX)]
+    // [requires(self.is_finite() && /* FIXME */)]
     //
     // Target function:
     // pub unsafe fn to_int_unchecked<Int>(self) -> Int where Self: FloatToInt<Int>
