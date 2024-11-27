@@ -913,4 +913,59 @@ mod verify {
             assert!(c_str.is_safe());
         }
     }
+
+    // pub fn bytes(&self) -> Bytes<'_>
+    #[kani::proof]
+    #[kani::unwind(32)]
+    fn check_bytes() {
+        const MAX_SIZE: usize = 32;
+        let string: [u8; MAX_SIZE] = any();
+        let slice = any_slice_of_array(&string);
+
+        if let Ok(c_str) = CStr::from_bytes_until_nul(slice) {
+            // compare the values from bytes method to the values from to_bytes method
+            let bytes_from_method: Vec<u8> = c_str.bytes().collect();
+            let bytes_expected = c_str.to_bytes();
+            assert_eq!(bytes_from_method.as_slice(), bytes_expected);
+        }
+    }
+
+    // pub const fn to_str(&self) -> Result<&str, str::Utf8Error>
+    #[kani::proof]
+    #[kani::unwind(32)]
+    fn check_to_str() {
+        const MAX_SIZE: usize = 32;
+        let string: [u8; MAX_SIZE] = any();
+        let slice = any_slice_of_array(&string);
+        // try to create cStr from slice until first nul byte
+        if let Ok(c_str) = CStr::from_bytes_until_nul(slice) {
+            // a double conversion here and assertion, if the bytes are still the same, function is valid
+            if let Ok(s) = c_str.to_str() {
+                assert_eq!(s.as_bytes(), c_str.to_bytes());
+            }
+        }
+    }
+
+    // pub const fn as_ptr(&self) -> *const c_char
+    #[kani::proof]
+    #[kani::unwind(32)]
+    fn check_as_ptr() {
+        const MAX_SIZE: usize = 32;
+        let string: [u8; MAX_SIZE] = any();
+        let slice = any_slice_of_array(&string);
+
+        if let Ok(c_str) = CStr::from_bytes_until_nul(slice) {
+            let ptr = c_str.as_ptr();
+            // length of c string to compare inclusive
+            let len = c_str.to_bytes_with_nul().len();
+
+            // SAFETY: To ensure that 'ptr' is valid for reads of 'len' bytes
+            unsafe {
+                // Not 100% sure, but create a slice from raw ptr with known length, and assert if it matches with 
+                // the value created via `to_bytes_with_nul`
+                let ptr_slice = slice::from_raw_parts(ptr as *const u8, len);
+                assert_eq!(ptr_slice, c_str.to_bytes_with_nul());
+            }
+        }
+    }
 }
