@@ -919,8 +919,8 @@ mod verify {
     #[kani::unwind(32)]
     fn check_bytes() {
         const MAX_SIZE: usize = 32;
-        let string: [u8; MAX_SIZE] = any();
-        let slice = any_slice_of_array(&string);
+        let string: [u8; MAX_SIZE] = kani::any();
+        let slice = kani::slice::any_slice_of_array(&string);
 
         if let Ok(c_str) = CStr::from_bytes_until_nul(slice) {
             // compare the values from bytes method to the values from to_bytes method
@@ -935,8 +935,8 @@ mod verify {
     #[kani::unwind(32)]
     fn check_to_str() {
         const MAX_SIZE: usize = 32;
-        let string: [u8; MAX_SIZE] = any();
-        let slice = any_slice_of_array(&string);
+        let string: [u8; MAX_SIZE] = kani::any();
+        let slice = kani::slice::any_slice_of_array(&string);
         // try to create cStr from slice until first nul byte
         if let Ok(c_str) = CStr::from_bytes_until_nul(slice) {
             // a double conversion here and assertion, if the bytes are still the same, function is valid
@@ -951,8 +951,8 @@ mod verify {
     #[kani::unwind(32)]
     fn check_as_ptr() {
         const MAX_SIZE: usize = 32;
-        let string: [u8; MAX_SIZE] = any();
-        let slice = any_slice_of_array(&string);
+        let string: [u8; MAX_SIZE] = kani::any();
+        let slice = kani::slice::any_slice_of_array(&string);
 
         if let Ok(c_str) = CStr::from_bytes_until_nul(slice) {
             let ptr = c_str.as_ptr();
