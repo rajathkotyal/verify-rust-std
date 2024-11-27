@@ -912,23 +912,26 @@ mod verify {
     }
 
     #[kani::proof]
-    #[kani::unwind(16)]
+    #[kani::unwind(32)]
     fn check_count_bytes() {
-        const MAX_LEN: usize = 16;
-        let mut string: [u8; MAX_LEN] = kani::any();
-    
-        // Ensure that the string does not contain NUL bytes before the chosen length
-        let len: usize = kani::any_where(|&x| x < MAX_LEN);
-        for i in 0..len {
-            kani::assume(string[i] != 0);
+        const MAX_SIZE: usize = 32;
+        let mut string: [u8; MAX_SIZE] = kani::any();
+        
+        // Randomly generate a length within the valid range [0, MAX_SIZE]
+        let mut len: usize = kani::any_where(|&x| x < MAX_SIZE);
+        
+        // If a null byte exists before the generated length
+        // adjust len to its position
+        if let Some(pos) = string[..len].iter().position(|&x| x == 0) {
+            len = pos;
+        } else {
+            // If no null byte, insert one at the chosen length
+            string[len] = 0;
         }
-    
-        // Insert a NUL byte at the specified length
-        string[len] = 0;
     
         let c_str = CStr::from_bytes_until_nul(&string).unwrap();
     
-        // Verify that count_bytes matches the chosen length
+        // Verify that count_bytes matches the adjusted length
         assert_eq!(c_str.count_bytes(), len);
     }
 }
