@@ -9,7 +9,6 @@ use crate::ptr::NonNull;
 use crate::slice::memchr;
 use crate::{fmt, intrinsics, ops, slice, str};
 
-// use safety::{requires, ensures};
 use crate::ub_checks::Invariant;
 
 #[cfg(kani)]
@@ -215,18 +214,17 @@ impl fmt::Display for FromBytesWithNulError {
 
 #[unstable(feature = "ub_checks", issue = "none")]
 impl Invariant for &CStr {
+    /**
+     * Safety invariant of a valid CStr:
+     * 1. An empty CStr should have a null byte.
+     * 2. A valid CStr should end with a null-terminator and contains
+     *    no intermediate null bytes.
+     */
     fn is_safe(&self) -> bool {
         let bytes: &[c_char] = &self.inner;
         let len = bytes.len();
 
-        // An empty CStr should has a null byte.
-        // A valid CStr should end with a null-terminator and contains
-        // no intermediate null bytes.
-        if bytes.is_empty() || bytes[len - 1] != 0 || bytes[..len-1].contains(&0) {
-            return false;
-        }
-
-        true
+        !bytes.is_empty() && bytes[len - 1] == 0 && !bytes[..len-1].contains(&0)
     }
 }
 
@@ -864,17 +862,16 @@ mod verify {
 
     // pub const fn from_bytes_until_nul(bytes: &[u8]) -> Result<&CStr, FromBytesUntilNulError>
     #[kani::proof]
-    #[kani::unwind(16)] // 7.3 seconds when 16; 33.1 seconds when 32
+    #[kani::unwind(32)] // 7.3 seconds when 16; 33.1 seconds when 32
     fn check_from_bytes_until_nul() {
-        const MAX_SIZE: usize = 16;
+        const MAX_SIZE: usize = 32;
         let string: [u8; MAX_SIZE] = kani::any();
         // Covers the case of a single null byte at the end, no null bytes, as
         // well as intermediate null bytes
         let slice = kani::slice::any_slice_of_array(&string);
 
         let result = CStr::from_bytes_until_nul(slice);
-        if result.is_ok() {
-            let c_str = result.unwrap();
+        if let Ok(c_str) = result {
             assert!(c_str.is_safe());
         }
     }
@@ -901,5 +898,43 @@ mod verify {
     
         // Verify that count_bytes matches the adjusted length
         assert_eq!(c_str.count_bytes(), len);
+    }
+
+    // pub const fn to_bytes(&self) -> &[u8]
+    #[kani::proof]
+    #[kani::unwind(32)]
+    fn check_to_bytes() {
+        const MAX_SIZE: usize = 32;
+        let string: [u8; MAX_SIZE] = kani::any();
+        let slice = kani::slice::any_slice_of_array(&string);
+
+        let result = CStr::from_bytes_until_nul(slice);
+        if let Ok(c_str) = result {
+            // Find the index of the first null byte in the slice since
+            // from_bytes_until_nul stops by there
+            let end_idx = slice.iter().position(|x| *x == 0).unwrap();
+            // Comparison does not include the null byte
+            assert_eq!(c_str.to_bytes(), &slice[..end_idx]);
+            assert!(c_str.is_safe());
+        }
+    }
+
+    // pub const fn to_bytes_with_nul(&self) -> &[u8]
+    #[kani::proof]
+    #[kani::unwind(33)] // 101.7 seconds when 33; 17.9 seconds for 17
+    fn check_to_bytes_with_nul() {
+        const MAX_SIZE: usize = 32;
+        let string: [u8; MAX_SIZE] = kani::any();
+        let slice = kani::slice::any_slice_of_array(&string);
+
+        let result = CStr::from_bytes_until_nul(slice);
+        if let Ok(c_str) = result {
+            // Find the index of the first null byte in the slice since
+            // from_bytes_until_nul stops by there
+            let end_idx = slice.iter().position(|x| *x == 0).unwrap();
+            // Comparison includes the null byte
+            assert_eq!(c_str.to_bytes_with_nul(), &slice[..end_idx + 1]);
+            assert!(c_str.is_safe());
+        }
     }
 }
