@@ -882,7 +882,7 @@ mod verify {
         const MAX_SIZE: usize = 32;
         let mut string: [u8; MAX_SIZE] = kani::any();
         
-        // Randomly generate a length within the valid range [0, MAX_SIZE]
+        // Non-deterministically generate a length within the valid range [0, MAX_SIZE]
         let mut len: usize = kani::any_where(|&x| x < MAX_SIZE);
         
         // If a null byte exists before the generated length
@@ -895,7 +895,6 @@ mod verify {
         }
     
         let c_str = CStr::from_bytes_until_nul(&string).unwrap();
-    
         // Verify that count_bytes matches the adjusted length
         assert_eq!(c_str.count_bytes(), len);
     }
