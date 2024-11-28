@@ -1070,7 +1070,7 @@ impl f32 {
     #[stable(feature = "float_approx_unchecked_to", since = "1.44.0")]
     #[inline]
     // is_finite() checks if the given float is neither infinite nor NaN.
-    #[requires(self.is_finite() && /* FIXME: kani::float::float_to_int_in_range::<Self, Int>(self) */)]
+    #[requires(self.is_finite() && kani::float::float_to_int_in_range::<Self, Int>(self))]
     pub unsafe fn to_int_unchecked<Int>(self) -> Int
     where
         Self: FloatToInt<Int>,
