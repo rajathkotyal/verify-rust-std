@@ -860,7 +860,7 @@ impl FusedIterator for Bytes<'_> {}
 mod verify {
     use super::*;
 
-    pub const fn from_bytes_until_nul(bytes: &[u8]) -> Result<&CStr, FromBytesUntilNulError>
+    // pub const fn from_bytes_until_nul(bytes: &[u8]) -> Result<&CStr, FromBytesUntilNulError> 
     #[kani::proof]
     #[kani::unwind(32)] // 7.3 seconds when 16; 33.1 seconds when 32
     fn check_from_bytes_until_nul() {
