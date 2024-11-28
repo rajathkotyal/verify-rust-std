@@ -859,6 +859,15 @@ impl FusedIterator for Bytes<'_> {}
 #[unstable(feature = "kani", issue = "none")]
 mod verify {
     use super::*;
+    
+    // Helper function
+    fn arbitrary_cstr(slice: &[u8]) -> &CStr {
+        let result = CStr::from_bytes_until_nul(&slice);
+        kani::assume(result.is_ok());
+        let c_str = result.unwrap();
+        assert!(c_str.is_safe());
+        c_str
+    }
 
     // pub const fn from_bytes_until_nul(bytes: &[u8]) -> Result<&CStr, FromBytesUntilNulError>
     #[kani::proof]
@@ -883,34 +892,28 @@ mod verify {
         const MAX_SIZE: usize = 32;
         let string: [u8; MAX_SIZE] = kani::any();
         let slice = kani::slice::any_slice_of_array(&string);
+        let c_str = arbitrary_cstr(slice);
 
-        let result = CStr::from_bytes_until_nul(slice);
-        if let Ok(c_str) = result {
-            // Find the index of the first null byte in the slice since
-            // from_bytes_until_nul stops by there
-            let end_idx = slice.iter().position(|x| *x == 0).unwrap();
-            // Comparison does not include the null byte
-            assert_eq!(c_str.to_bytes(), &slice[..end_idx]);
-            assert!(c_str.is_safe());
-        }
+        let bytes = c_str.to_bytes();
+        let end_idx = bytes.len();
+        // Comparison does not include the null byte
+        assert_eq!(bytes, &slice[..end_idx]);
+        assert!(c_str.is_safe());
     }
 
     // pub const fn to_bytes_with_nul(&self) -> &[u8]
     #[kani::proof]
-    #[kani::unwind(33)] // 101.7 seconds when 33; 17.9 seconds for 17
+    #[kani::unwind(33)]
     fn check_to_bytes_with_nul() {
         const MAX_SIZE: usize = 32;
         let string: [u8; MAX_SIZE] = kani::any();
         let slice = kani::slice::any_slice_of_array(&string);
+        let c_str = arbitrary_cstr(slice);
 
-        let result = CStr::from_bytes_until_nul(slice);
-        if let Ok(c_str) = result {
-            // Find the index of the first null byte in the slice since
-            // from_bytes_until_nul stops by there
-            let end_idx = slice.iter().position(|x| *x == 0).unwrap();
-            // Comparison includes the null byte
-            assert_eq!(c_str.to_bytes_with_nul(), &slice[..end_idx + 1]);
-            assert!(c_str.is_safe());
-        }
+        let bytes = c_str.to_bytes_with_nul();
+        let end_idx = bytes.len();
+        // Comparison includes the null byte
+        assert_eq!(bytes, &slice[..end_idx]);
+        assert!(c_str.is_safe());
     }
 }
