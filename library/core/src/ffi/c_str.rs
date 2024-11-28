@@ -10,6 +10,7 @@ use crate::slice::memchr;
 use crate::{fmt, intrinsics, ops, slice, str};
 
 use crate::ub_checks::Invariant;
+use safety::{requires, ensures};
 
 #[cfg(kani)]
 use crate::kani;
@@ -431,6 +432,10 @@ impl CStr {
     #[stable(feature = "cstr_from_bytes", since = "1.10.0")]
     #[rustc_const_stable(feature = "const_cstr_unchecked", since = "1.59.0")]
     #[rustc_allow_const_fn_unstable(const_eval_select)]
+    // Preconditions: Null-terminated and no intermediate null bytes
+    #[requires(!bytes.is_empty() && bytes[bytes.len() - 1] == 0 && !bytes[..bytes.len()-1].contains(&0))]
+    // Postcondition: The resulting CStr satisfies the same conditions as preconditions
+    #[ensures(|result| result.is_safe())]
     pub const unsafe fn from_bytes_with_nul_unchecked(bytes: &[u8]) -> &CStr {
         #[inline]
         fn rt_impl(bytes: &[u8]) -> &CStr {
@@ -874,5 +879,24 @@ mod verify {
         if let Ok(c_str) = result {
             assert!(c_str.is_safe());
         }
+    }
+
+    //  pub const unsafe fn from_bytes_with_nul_unchecked(bytes: &[u8]) -> &CStr
+    #[kani::proof_for_contract(CStr::from_bytes_with_nul_unchecked)]
+    #[kani::unwind(33)]
+    fn check_from_bytes_with_nul_unchecked() {
+        const MAX_SIZE: usize = 32;
+        let string: [u8; MAX_SIZE] = kani::any();
+        let slice = kani::slice::any_slice_of_array(&string);
+
+        // Kani assumes that the input slice is null-terminated and contains
+        // no intermediate null bytes
+        let c_str = unsafe { CStr::from_bytes_with_nul_unchecked(slice) };
+        // Kani ensures that the output CStr holds the CStr safety invariant
+
+        // Correctness check
+        let bytes = c_str.to_bytes();
+        let len = bytes.len();
+        assert_eq!(bytes, &slice[..len]);
     }
 }
