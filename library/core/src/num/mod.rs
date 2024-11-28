@@ -1686,7 +1686,7 @@ from_str_radix_size_impl! { signed i64 isize, unsigned u64 usize }
 
 #[cfg(kani)]
 #[unstable(feature = "kani", issue = "none")]
-pub mod verify {
+mod verify {
     use super::*;
 
     // Verify `unchecked_{add, sub, mul}`
@@ -1843,7 +1843,7 @@ pub mod verify {
         }
     }
 
-    // Part 3: Float to Integer Conversion function Harness Generation Macros
+    // Part 3: Float to Integer Conversion function Harness Generation Macro
     macro_rules! generate_to_int_unchecked_harness {
         ($floatType:ty, $($intType:ty, $harness_name:ident),+) => {
             $(
@@ -2164,7 +2164,7 @@ pub mod verify {
     // 1. Float is not `NaN` and infinite
     // 2. Float is representable in the return type `Int`, after truncating
     //    off its fractional part
-    // [requires(self.is_finite() && /* FIXME */)]
+    // [requires(self.is_finite() && kani::float::float_to_int_in_range::<Self, Int>(self))]
     //
     // Target function:
     // pub unsafe fn to_int_unchecked<Int>(self) -> Int where Self: FloatToInt<Int>
