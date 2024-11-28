@@ -927,15 +927,16 @@ mod verify {
         let result = CStr::from_bytes_until_nul(slice);
         if let Ok(c_str) = result {
             let ptr = c_str.as_ptr();
-            let len = c_str.to_bytes_with_nul().len();
+            let bytes_with_nul = c_str.to_bytes_with_nul();
+            let len = bytes_with_nul.len();
 
             // We ensure that `ptr` is valid for reads of `len` bytes
             unsafe {
                 for i in 0..len {
                     // Iterate and get each byte in the C string from our raw ptr
                     let byte_at_ptr = *ptr.add(i);
-                    // Get the byte at every pos from the to_bytes_with_nul method
-                    let byte_in_cstr = c_str.to_bytes_with_nul()[i];
+                    // Get the byte at every pos
+                    let byte_in_cstr = bytes_with_nul[i];
                     // Compare the two bytes to ensure they are equal
                     assert_eq!(byte_at_ptr as u8, byte_in_cstr);
                 }
