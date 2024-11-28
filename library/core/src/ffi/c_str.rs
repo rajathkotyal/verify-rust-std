@@ -860,7 +860,7 @@ impl FusedIterator for Bytes<'_> {}
 mod verify {
     use super::*;
 
-    // pub const fn from_bytes_until_nul(bytes: &[u8]) -> Result<&CStr, FromBytesUntilNulError> 
+    // Proof harness for pub const fn from_bytes_until_nul(bytes: &[u8]) -> Result<&CStr, FromBytesUntilNulError> 
     #[kani::proof]
     #[kani::unwind(32)] // 7.3 seconds when 16; 33.1 seconds when 32
     fn check_from_bytes_until_nul() {
@@ -876,7 +876,7 @@ mod verify {
         }
     }
 
-    // pub const fn to_bytes(&self) -> &[u8]
+    // Proof harness for  pub const fn to_bytes(&self) -> &[u8]
     #[kani::proof]
     #[kani::unwind(32)]
     fn check_to_bytes() {
@@ -895,7 +895,7 @@ mod verify {
         }
     }
 
-    // pub const fn to_bytes_with_nul(&self) -> &[u8]
+    // Proof harness for pub const fn to_bytes_with_nul(&self) -> &[u8]
     #[kani::proof]
     #[kani::unwind(33)] // 101.7 seconds when 33; 17.9 seconds for 17
     fn check_to_bytes_with_nul() {
@@ -914,7 +914,7 @@ mod verify {
         }
     }
 
-    // pub fn bytes(&self) -> Bytes<'_>
+    // Proof harness for pub fn bytes(&self) -> Bytes<'_>
     #[kani::proof]
     #[kani::unwind(32)]
     fn check_bytes() {
@@ -935,7 +935,7 @@ mod verify {
         }
     }
 
-    // pub const fn to_str(&self) -> Result<&str, str::Utf8Error>
+    // Proof harness for pub const fn to_str(&self) -> Result<&str, str::Utf8Error>
     #[kani::proof]
     #[kani::unwind(32)]
     fn check_to_str() {
@@ -954,7 +954,7 @@ mod verify {
         }
     }
 
-    // pub const fn as_ptr(&self) -> *const c_char
+    // Proof harness for pub const fn as_ptr(&self) -> *const c_char
     #[kani::proof]
     #[kani::unwind(33)] 
     fn check_as_ptr() {
@@ -980,5 +980,82 @@ mod verify {
             }
             assert!(c_str.is_safe());
         }
+    }
+
+    // Stub implementation for strlen --> https://model-checking.github.io/kani/rfc/rfcs/0002-function-stubbing.html
+    #[cfg(kani)]
+    unsafe fn stub_strlen(s: *const c_char) -> usize {
+        let mut len = 0;
+        unsafe {
+            while *s.add(len) != 0 {
+                len += 1;
+            }
+        }
+        len
+    }
+
+    // Proof harness for pub const unsafe fn from_ptr<'a>(ptr: *const c_char) -> &'a CStr
+    #[cfg(kani)]
+    #[kani::proof]
+    #[kani::unwind(33)] 
+    #[kani::stub(strlen, stub_strlen)]
+    fn check_from_ptr() {
+        const MAX_SIZE: usize = 32;
+        //generating an arbitrary byte array with a max size
+        let mut string: [u8; MAX_SIZE] = kani::any();
+        // need At least one nul terminator is present within the array
+        let nul_position = kani::any::<usize>() % MAX_SIZE;
+        string[nul_position] = 0;
+        // Make sure that there are no other nul bytes before `nul_position`
+        for i in 0..nul_position {
+            kani::assume(string[i] != 0);
+        }
+        // start from the beginning of the string
+        let ptr = string.as_ptr().cast::<c_char>();
+        let c_str = unsafe { CStr::from_ptr(ptr) };
+        // Compute the expected length up to the nul terminator
+        let len = unsafe { strlen(ptr) };
+        // Check that `c_str` has the correct length
+        assert_eq!(c_str.to_bytes().len(), len);
+        assert!(c_str.is_safe());
+    }
+
+    // Proof harness for const unsafe fn strlen(ptr: *const c_char) -> usize
+    #[cfg(kani)]
+    #[kani::proof]
+    #[kani::unwind(32)]
+    #[kani::stub(strlen, stub_strlen)]
+    fn check_strlen() {
+        const MAX_SIZE: usize = 32;
+        let mut string: [u8; MAX_SIZE] = kani::any();
+        let nul_position = kani::any::<usize>() % MAX_SIZE;
+        string[nul_position] = 0;
+        // Make sure that there are no other nul bytes before `nul_position`
+        for i in 0..nul_position {
+            kani::assume(string[i] != 0);
+        }
+        let ptr = string.as_ptr().cast::<c_char>();
+        // Call strlen with the pointer
+        let len = unsafe { strlen(ptr) };
+        // Check that len matches the expected position of the nul terminator
+        assert_eq!(len, nul_position);
+    }
+
+    // Proof harness for fn from_bytes_with_nul_unchecked(bytes: &[u8]) -> &CStr
+    #[kani::proof]
+    #[kani::unwind(32)]
+    fn check_from_bytes_with_nul_unchecked() {
+        const MAX_SIZE: usize = 32;
+        let mut bytes: [u8; MAX_SIZE] = kani::any();
+        bytes[MAX_SIZE - 1] = 0;
+        // Ensure that there are no nul bytes in the rest of the array
+        for i in 0..(MAX_SIZE - 1) {
+            kani::assume(bytes[i] != 0);
+        }
+        // Create a slice including the nul terminator
+        let slice = &bytes[..];
+        // Call from_bytes_with_nul_unchecked with the slice
+        let c_str = unsafe { CStr::from_bytes_with_nul_unchecked(slice) };
+        assert!(c_str.is_safe());
     }
 }
