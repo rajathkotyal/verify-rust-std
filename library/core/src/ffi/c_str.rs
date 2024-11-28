@@ -876,63 +876,75 @@ mod verify {
         }
     }
 
-    /// Verifies the behavior of the `CStr::is_empty` method.
+    #[kani::proof]
+    #[kani::unwind(32)]
+    fn check_count_bytes() {
+        const MAX_SIZE: usize = 32;
+        let mut bytes: [u8; MAX_SIZE] = kani::any();
+
+        // Non-deterministically generate a length within the valid range [0, MAX_SIZE]
+        let mut len: usize = kani::any_where(|&x| x < MAX_SIZE);
+
+        // If a null byte exists before the generated length
+        // adjust len to its position
+        if let Some(pos) = bytes[..len].iter().position(|&x| x == 0) {
+            len = pos;
+        } else {
+            // If no null byte, insert one at the chosen length
+            bytes[len] = 0;
+        }
+
+        let c_str = CStr::from_bytes_until_nul(&bytes).unwrap();
+        // Verify that count_bytes matches the adjusted length
+        assert_eq!(c_str.count_bytes(), len);
+    }
+
+    /// Verifies the `CStr::is_empty` method.
     ///
-    /// # Purpose
+    /// 
     /// This harness ensures that the `is_empty` method behaves correctly under various scenarios:
     /// - Identifying valid empty `CStr` instances (only null terminator).
     /// - Identifying valid non-empty `CStr` instances (characters followed by a null terminator).
-    /// - Rejecting invalid `CStr` instances, such as those missing a null terminator or containing interior null bytes.
+    /// - Rejecting invalid `CStr` instances: those missing a null terminator or containing interior null bytes.
     ///
     /// # Test Cases
     /// 1. **Valid Empty CStr:** Ensure `is_empty` returns `true` for a `CStr` with only a null terminator.
     /// 2. **Valid Non-Empty CStr:** Ensure `is_empty` returns `false` for a `CStr` with characters followed by a null terminator.
     /// 3. **Invalid CStr (No Null Terminator):** Verify that constructing a `CStr` without a null terminator fails.
     /// 4. **Invalid CStr (Interior Null Byte):** Verify that constructing a `CStr` with interior null bytes fails.
-    ///
-    /// # Assumptions
-    /// - The test harness assumes that the `CStr::from_bytes_with_nul` function rejects invalid `CStr` inputs.
-    ///
-    /// # Safety
-    /// - This harness operates entirely on safe methods (`CStr::from_bytes_with_nul`) for constructing valid `CStr` instances.
-    /// - Invalid cases are explicitly tested to ensure they do not violate Rust’s safety guarantees.
-    ///
-    /// # Kani Integration
-    /// - The harness uses the Kani verification tool to exhaustively check all possible inputs within defined bounds.
-    ///
     #[kani::proof]
+    #[kani::unwind(32)]
     fn check_is_empty() {
+        const MAX_LEN: usize = 32;
+    
         // Case 1: Valid Empty CStr
-        // This test ensures that `is_empty` correctly identifies an empty `CStr` (only null terminator).
-        // A valid `CStr` with no characters other than the null terminator should return `true`.
-        let empty_cstr = CStr::from_bytes_with_nul(b"\0").unwrap();
-        assert!(empty_cstr.is_empty(), "Expected `is_empty` to return true for an empty CStr.");
-
+        let empty_bytes: [u8; MAX_LEN] =
+            kani::any_where(|b: &[u8; MAX_LEN]| b[0] == 0 && !b[1..].contains(&0));
+        let empty_cstr = CStr::from_bytes_with_nul(&empty_bytes[..1]).unwrap();
+        assert!(empty_cstr.is_empty());
+    
         // Case 2: Valid Non-Empty CStr
-        // This test ensures that `is_empty` correctly identifies a non-empty `CStr`.
-        // A valid `CStr` with characters followed by a null terminator should return `false`.
-        let non_empty_cstr = CStr::from_bytes_with_nul(b"hello\0").unwrap();
-        assert!(!non_empty_cstr.is_empty(), "Expected `is_empty` to return false for a non-empty CStr.");
-
+        let mut non_empty_bytes: [u8; MAX_LEN] = kani::any();
+        let len = kani::any_where(|&l: &usize| l >= 2 && l < MAX_LEN); // Ensure len >= 2
+        non_empty_bytes[len - 1] = 0; // Ensure null terminator
+        non_empty_bytes[..len - 1]
+            .iter_mut()
+            .for_each(|b| *b = kani::any_where(|&c: &u8| c != 0)); // Ensure no interior null bytes
+        let non_empty_cstr = CStr::from_bytes_with_nul(&non_empty_bytes[..len]).unwrap();
+        assert!(!non_empty_cstr.is_empty());
+    
         // Case 3: Invalid CStr (No Null Terminator)
-        // Attempt to create a `CStr` from a byte slice without a null terminator.
-        // This should fail because the invariant of a null-terminated string is violated.
-        let invalid_bytes = b"hello"; // No null terminator at the end.
-        let invalid_result = CStr::from_bytes_with_nul(invalid_bytes);
-        assert!(
-            invalid_result.is_err(),
-            "Expected CStr::from_bytes_with_nul to return an error for a missing null terminator."
-        );
-
+        let invalid_bytes: [u8; MAX_LEN] =
+            kani::any_where(|b: &[u8; MAX_LEN]| !b.contains(&0)); // No null byte
+        let invalid_result = CStr::from_bytes_with_nul(&invalid_bytes[..MAX_LEN - 1]); // Missing null terminator
+        assert!(invalid_result.is_err());
+    
         // Case 4: Invalid CStr (Interior Null Byte)
-        // Attempt to create a `CStr` from a byte slice with an interior null byte.
-        // This should fail because the invariant of no intermediate null bytes is violated.
-        let interior_null = b"he\0llo\0"; // Null byte in the middle of the string.
-        let invalid_result = CStr::from_bytes_with_nul(interior_null);
-        assert!(
-            invalid_result.is_err(),
-            "Expected CStr::from_bytes_with_nul to return an error for interior null bytes."
-        );
+        let mut interior_null_bytes: [u8; MAX_LEN] = kani::any();
+        let pos = kani::any_where(|&p: &usize| p < MAX_LEN - 1); // Non-deterministic position for the null byte
+        interior_null_bytes[pos] = 0; // Insert null byte inside the array
+        interior_null_bytes[MAX_LEN - 1] = 0; // Ensure null terminator at the end
+        let invalid_result = CStr::from_bytes_with_nul(&interior_null_bytes);
+        assert!(invalid_result.is_err());
     }
-
 }
