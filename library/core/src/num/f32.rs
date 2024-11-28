@@ -17,7 +17,7 @@ use crate::intrinsics;
 use crate::mem;
 use crate::num::FpCategory;
 
-use safety::{requires, ensures};
+use safety::requires;
 
 #[cfg(kani)]
 use crate::kani;
