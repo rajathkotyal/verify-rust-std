@@ -880,21 +880,21 @@ mod verify {
     #[kani::unwind(32)]
     fn check_count_bytes() {
         const MAX_SIZE: usize = 32;
-        let mut string: [u8; MAX_SIZE] = kani::any();
+        let mut bytes: [u8; MAX_SIZE] = kani::any();
         
         // Non-deterministically generate a length within the valid range [0, MAX_SIZE]
         let mut len: usize = kani::any_where(|&x| x < MAX_SIZE);
         
         // If a null byte exists before the generated length
         // adjust len to its position
-        if let Some(pos) = string[..len].iter().position(|&x| x == 0) {
+        if let Some(pos) = bytes[..len].iter().position(|&x| x == 0) {
             len = pos;
         } else {
             // If no null byte, insert one at the chosen length
-            string[len] = 0;
+            bytes[len] = 0;
         }
     
-        let c_str = CStr::from_bytes_until_nul(&string).unwrap();
+        let c_str = CStr::from_bytes_until_nul(&bytes).unwrap();
         // Verify that count_bytes matches the adjusted length
         assert_eq!(c_str.count_bytes(), len);
     }
