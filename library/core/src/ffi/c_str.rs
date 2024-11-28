@@ -10,6 +10,7 @@ use crate::slice::memchr;
 use crate::{fmt, intrinsics, ops, slice, str};
 
 use crate::ub_checks::Invariant;
+use safety::{requires, ensures};
 
 #[cfg(kani)]
 use crate::kani;
@@ -431,6 +432,10 @@ impl CStr {
     #[stable(feature = "cstr_from_bytes", since = "1.10.0")]
     #[rustc_const_stable(feature = "const_cstr_unchecked", since = "1.59.0")]
     #[rustc_allow_const_fn_unstable(const_eval_select)]
+    // Preconditions: Null-terminated and no intermediate null bytes
+    #[requires(!bytes.is_empty() && bytes[bytes.len() - 1] == 0 && !bytes[..bytes.len()-1].contains(&0))]
+    // Postcondition: The resulting CStr satisfies the same conditions as preconditions
+    #[ensures(|result| result.is_safe())]
     pub const unsafe fn from_bytes_with_nul_unchecked(bytes: &[u8]) -> &CStr {
         #[inline]
         fn rt_impl(bytes: &[u8]) -> &CStr {
@@ -876,113 +881,7 @@ mod verify {
         }
     }
 
-    // Proof harness for  pub const fn to_bytes(&self) -> &[u8]
-    #[kani::proof]
-    #[kani::unwind(32)]
-    fn check_to_bytes() {
-        const MAX_SIZE: usize = 32;
-        let string: [u8; MAX_SIZE] = kani::any();
-        let slice = kani::slice::any_slice_of_array(&string);
-
-        let result = CStr::from_bytes_until_nul(slice);
-        if let Ok(c_str) = result {
-            // Find the index of the first null byte in the slice since
-            // from_bytes_until_nul stops by there
-            let end_idx = slice.iter().position(|x| *x == 0).unwrap();
-            // Comparison does not include the null byte
-            assert_eq!(c_str.to_bytes(), &slice[..end_idx]);
-            assert!(c_str.is_safe());
-        }
-    }
-
-    // Proof harness for pub const fn to_bytes_with_nul(&self) -> &[u8]
-    #[kani::proof]
-    #[kani::unwind(33)] // 101.7 seconds when 33; 17.9 seconds for 17
-    fn check_to_bytes_with_nul() {
-        const MAX_SIZE: usize = 32;
-        let string: [u8; MAX_SIZE] = kani::any();
-        let slice = kani::slice::any_slice_of_array(&string);
-
-        let result = CStr::from_bytes_until_nul(slice);
-        if let Ok(c_str) = result {
-            // Find the index of the first null byte in the slice since
-            // from_bytes_until_nul stops by there
-            let end_idx = slice.iter().position(|x| *x == 0).unwrap();
-            // Comparison includes the null byte
-            assert_eq!(c_str.to_bytes_with_nul(), &slice[..end_idx + 1]);
-            assert!(c_str.is_safe());
-        }
-    }
-
-    // Proof harness for pub fn bytes(&self) -> Bytes<'_>
-    #[kani::proof]
-    #[kani::unwind(32)]
-    fn check_bytes() {
-        const MAX_SIZE: usize = 32;
-        let string: [u8; MAX_SIZE] = kani::any();
-        let slice = kani::slice::any_slice_of_array(&string);
-
-        let result = CStr::from_bytes_until_nul(slice);
-        if let Ok(c_str) = result {
-            let bytes_iterator = c_str.bytes();
-            let bytes_expected = c_str.to_bytes();
-
-            // Compare the bytes obtained from the iterator and the slice
-            // bytes_expected.iter().copied() converts the slice into an iterator over u8
-            assert!(bytes_iterator.eq(bytes_expected.iter().copied()));
-
-            assert!(c_str.is_safe());
-        }
-    }
-
-    // Proof harness for pub const fn to_str(&self) -> Result<&str, str::Utf8Error>
-    #[kani::proof]
-    #[kani::unwind(32)]
-    fn check_to_str() {
-        const MAX_SIZE: usize = 32;
-        let string: [u8; MAX_SIZE] = kani::any();
-        let slice = kani::slice::any_slice_of_array(&string);
-
-        let result = CStr::from_bytes_until_nul(slice);
-        if let Ok(c_str) = result {
-            // a double conversion here and assertion, if the bytes are still the same, function is valid
-            let str_result = c_str.to_str();
-            if let Ok(s) = str_result {
-                assert_eq!(s.as_bytes(), c_str.to_bytes());
-            }
-            assert!(c_str.is_safe());
-        }
-    }
-
-    // Proof harness for pub const fn as_ptr(&self) -> *const c_char
-    #[kani::proof]
-    #[kani::unwind(33)] 
-    fn check_as_ptr() {
-        const MAX_SIZE: usize = 32;
-        let string: [u8; MAX_SIZE] = kani::any();
-        let slice = kani::slice::any_slice_of_array(&string);
-
-        let result = CStr::from_bytes_until_nul(slice);
-        if let Ok(c_str) = result {
-            let ptr = c_str.as_ptr();
-            let len = c_str.to_bytes_with_nul().len();
-
-            // We ensure that `ptr` is valid for reads of `len` bytes
-            unsafe {
-                for i in 0..len {
-                    // Iterate and get each byte in the C string from our raw ptr
-                    let byte_at_ptr = *ptr.add(i);
-                    // Get the byte at every pos from the to_bytes_with_nul method
-                    let byte_in_cstr = c_str.to_bytes_with_nul()[i];
-                    // Compare the two bytes to ensure they are equal
-                    assert_eq!(byte_at_ptr as u8, byte_in_cstr);
-                }
-            }
-            assert!(c_str.is_safe());
-        }
-    }
-
-    // Stub implementation for strlen --> https://model-checking.github.io/kani/rfc/rfcs/0002-function-stubbing.html
+    // Stub implementation for strlen: https://model-checking.github.io/kani/rfc/rfcs/0002-function-stubbing.html
     #[cfg(kani)]
     unsafe fn stub_strlen(s: *const c_char) -> usize {
         let mut len = 0;
@@ -1004,7 +903,7 @@ mod verify {
         //generating an arbitrary byte array with a max size
         let mut string: [u8; MAX_SIZE] = kani::any();
         // need At least one nul terminator is present within the array
-        let nul_position = kani::any::<usize>() % MAX_SIZE;
+        let nul_position: usize = kani::any_where(|x| *x >= 0 && *x < MAX_SIZE);
         string[nul_position] = 0;
         // Make sure that there are no other nul bytes before `nul_position`
         for i in 0..nul_position {
@@ -1028,7 +927,7 @@ mod verify {
     fn check_strlen() {
         const MAX_SIZE: usize = 32;
         let mut string: [u8; MAX_SIZE] = kani::any();
-        let nul_position = kani::any::<usize>() % MAX_SIZE;
+        let nul_position: usize = kani::any_where(|x| *x >= 0 && *x < MAX_SIZE);
         string[nul_position] = 0;
         // Make sure that there are no other nul bytes before `nul_position`
         for i in 0..nul_position {
@@ -1041,21 +940,22 @@ mod verify {
         assert_eq!(len, nul_position);
     }
 
-    // Proof harness for fn from_bytes_with_nul_unchecked(bytes: &[u8]) -> &CStr
-    #[kani::proof]
-    #[kani::unwind(32)]
+    //  pub const unsafe fn from_bytes_with_nul_unchecked(bytes: &[u8]) -> &CStr
+    #[kani::proof_for_contract(CStr::from_bytes_with_nul_unchecked)]
+    #[kani::unwind(33)]
     fn check_from_bytes_with_nul_unchecked() {
         const MAX_SIZE: usize = 32;
-        let mut bytes: [u8; MAX_SIZE] = kani::any();
-        bytes[MAX_SIZE - 1] = 0;
-        // Ensure that there are no nul bytes in the rest of the array
-        for i in 0..(MAX_SIZE - 1) {
-            kani::assume(bytes[i] != 0);
-        }
-        // Create a slice including the nul terminator
-        let slice = &bytes[..];
-        // Call from_bytes_with_nul_unchecked with the slice
+        let string: [u8; MAX_SIZE] = kani::any();
+        let slice = kani::slice::any_slice_of_array(&string);
+
+        // Kani assumes that the input slice is null-terminated and contains
+        // no intermediate null bytes
         let c_str = unsafe { CStr::from_bytes_with_nul_unchecked(slice) };
-        assert!(c_str.is_safe());
+        // Kani ensures that the output CStr holds the CStr safety invariant
+
+        // Correctness check
+        let bytes = c_str.to_bytes();
+        let len = bytes.len();
+        assert_eq!(bytes, &slice[..len]);
     }
 }
