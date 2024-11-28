@@ -907,11 +907,11 @@ mod verify {
     /// - Identifying valid non-empty `CStr` instances (characters followed by a null terminator).
     /// - Rejecting invalid `CStr` instances: those missing a null terminator or containing interior null bytes.
     ///
-    /// # Test Cases
-    /// 1. **Valid Empty CStr:** Ensure `is_empty` returns `true` for a `CStr` with only a null terminator.
-    /// 2. **Valid Non-Empty CStr:** Ensure `is_empty` returns `false` for a `CStr` with characters followed by a null terminator.
-    /// 3. **Invalid CStr (No Null Terminator):** Verify that constructing a `CStr` without a null terminator fails.
-    /// 4. **Invalid CStr (Interior Null Byte):** Verify that constructing a `CStr` with interior null bytes fails.
+    /// Test Cases
+    /// 1. Valid Empty CStr:Ensure `is_empty` returns `true` for a `CStr` with only a null terminator.
+    /// 2. Valid Non-Empty CStr:Ensure `is_empty` returns `false` for a `CStr` with characters followed by a null terminator.
+    /// 3. Invalid CStr (No Null Terminator): Verify that constructing a `CStr` without a null terminator fails.
+    /// 4. Invalid CStr (Interior Null Byte): Verify that constructing a `CStr` with interior null bytes fails.
     #[kani::proof]
     #[kani::unwind(32)]
     fn check_is_empty() {

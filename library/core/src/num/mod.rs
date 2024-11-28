@@ -1843,21 +1843,6 @@ mod verify {
         }
     }
 
-    // Part 3: Float to Integer Conversion function Harness Generation Macros
-    macro_rules! generate_to_int_unchecked_harness {
-        ($floatType:ty, $($intType:ty, $harness_name:ident),+) => {
-            $(
-                #[kani::proof_for_contract($floatType::to_int_unchecked)]
-                pub fn $harness_name() {
-                    let num1: $floatType = kani::any::<$floatType>();
-                    let result = unsafe { num1.to_int_unchecked::<$intType>() };
-
-                    assert_eq!(result, num1 as $intType);
-                }
-            )+
-        }
-    }
-
     // `unchecked_add` proofs
     //
     // Target types:
