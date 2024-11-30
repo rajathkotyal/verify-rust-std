@@ -17,8 +17,7 @@ use crate::intrinsics;
 use crate::mem;
 use crate::num::FpCategory;
 use crate::panic::const_assert;
-
-use safety::{requires, ensures};
+use safety::requires;
 
 #[cfg(kani)]
 use crate::kani;
@@ -859,7 +858,7 @@ impl f16 {
     #[inline]
     #[unstable(feature = "f16", issue = "116909")]
     #[must_use = "this returns the result of the operation, without modifying the original"]
-    #[requires(self.is_finite() && /* FIXME */)]
+    #[requires(self.is_finite() && kani::float::float_to_int_in_range::<Self, Int>(self))]
     pub unsafe fn to_int_unchecked<Int>(self) -> Int
     where
         Self: FloatToInt<Int>,

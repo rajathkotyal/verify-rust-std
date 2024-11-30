@@ -2143,19 +2143,6 @@ mod verify {
     generate_wrapping_shift_harness!(u128, wrapping_shr, checked_wrapping_shr_u128);
     generate_wrapping_shift_harness!(usize, wrapping_shr, checked_wrapping_shr_usize);
 
-    // `f{16,128}::to_int_unchecked` proofs
-    //
-    // Target integer types:
-    // i{8,128,size} and u{8,16,32,64,128,size} -- 12 types in total
-    //
-    // Target contracts:
-    // 1. Float is not `NaN` and infinite
-    // 2. Float is representable in the return type `Int`, after truncating
-    //    off its fractional part
-    // [requires(self.is_finite() && self >= Self::MIN && self <= Self::MAX)]
-    //
-    // Target function:
-    // pub unsafe fn to_int_unchecked<Int>(self) -> Int where Self: FloatToInt<Int>
     generate_to_int_unchecked_harness!(f16,
         i8, checked_f128_to_int_unchecked_i8,
         i16, checked_f128_to_int_unchecked_i16,
@@ -2185,5 +2172,4 @@ mod verify {
         u128, checked_f128_to_int_unchecked_u128,
         usize, checked_f128_to_int_unchecked_usize
     );
-
 }
