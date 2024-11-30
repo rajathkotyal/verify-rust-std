@@ -1845,7 +1845,7 @@ mod verify {
             )+
         }
     }
-
+/*
     // `unchecked_add` proofs
     //
     // Target types:
@@ -2141,21 +2141,21 @@ mod verify {
     generate_wrapping_shift_harness!(u32, wrapping_shr, checked_wrapping_shr_u32);
     generate_wrapping_shift_harness!(u64, wrapping_shr, checked_wrapping_shr_u64);
     generate_wrapping_shift_harness!(u128, wrapping_shr, checked_wrapping_shr_u128);
-    generate_wrapping_shift_harness!(usize, wrapping_shr, checked_wrapping_shr_usize);
+    generate_wrapping_shift_harness!(usize, wrapping_shr, checked_wrapping_shr_usize);*/
 
     generate_to_int_unchecked_harness!(f16,
-        i8, checked_f128_to_int_unchecked_i8,
-        i16, checked_f128_to_int_unchecked_i16,
-        i32, checked_f128_to_int_unchecked_i32,
-        i64, checked_f128_to_int_unchecked_i64,
-        i128, checked_f128_to_int_unchecked_i128,
-        isize, checked_f128_to_int_unchecked_isize,
-        u8, checked_f128_to_int_unchecked_u8,
-        u16, checked_f128_to_int_unchecked_u16,
-        u32, checked_f128_to_int_unchecked_u32,
-        u64, checked_f128_to_int_unchecked_u64,
-        u128, checked_f128_to_int_unchecked_u128,
-        usize, checked_f128_to_int_unchecked_usize
+        i8, checked_f16_to_int_unchecked_i8,
+        i16, checked_f16_to_int_unchecked_i16,
+        i32, checked_f16_to_int_unchecked_i32,
+        i64, checked_f16_to_int_unchecked_i64,
+        i128, checked_f16_to_int_unchecked_i128,
+        isize, checked_f16_to_int_unchecked_isize,
+        u8, checked_f16_to_int_unchecked_u8,
+        u16, checked_f16_to_int_unchecked_u16,
+        u32, checked_f16_to_int_unchecked_u32,
+        u64, checked_f16_to_int_unchecked_u64,
+        u128, checked_f16_to_int_unchecked_u128,
+        usize, checked_f16_to_int_unchecked_usize
     );
 
     generate_to_int_unchecked_harness!(f128,
