@@ -860,8 +860,11 @@ mod verify {
     
     // Helper function
     fn arbitrary_cstr(slice: &[u8]) -> &CStr {
+        // At a minimum, the slice has a null terminator to form a valid CStr.
+        kani::assume(slice.len() > 0 && slice[slice.len() - 1] == 0);
         let result = CStr::from_bytes_until_nul(&slice);
-        kani::assume(result.is_ok());
+        // Given the assumption, from_bytes_until_nul should never fail
+        assert!(result.is_ok());
         let c_str = result.unwrap();
         assert!(c_str.is_safe());
         c_str
@@ -946,7 +949,7 @@ mod verify {
         const MAX_SIZE: usize = 32;
         let string: [u8; MAX_SIZE] = kani::any();
         let slice = kani::slice::any_slice_of_array(&string);
-        let c_str = arbitrary_cstr(slice); // introduced in PR#189
+        let c_str = arbitrary_cstr(slice);
 
         let bytes = c_str.to_bytes(); // does not include null terminator
         let expected_is_empty = bytes.len() == 0;
