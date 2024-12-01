@@ -883,29 +883,31 @@ mod verify {
         }
     }
 
-    // pub const fn from_bytes_with_nul(bytes: &[u8]) -> Result<&Self, FromBytesWithNulError>
     #[kani::proof]
     #[kani::unwind(33)] 
     fn check_from_bytes_with_nul() {
         const MAX_SIZE: usize = 32;
         let mut buffer: [u8; MAX_SIZE] = kani::any();
 
-        // last byte == null
-        buffer[MAX_SIZE - 1] = 0;
+        // Iterate over all possible slice lengths from 1 to MAX_SIZE
+        for slice_length in 1..=MAX_SIZE {
+            // Ensure the slice is valid by setting the last byte to null
+            buffer[slice_length - 1] = 0;
 
-        // check to see all bytes before the last are non-null
-        for i in 0..MAX_SIZE - 1 {
-            kani::assume(buffer[i] != 0);
-        }
-        let slice = &buffer[..];
-        let result = CStr::from_bytes_with_nul(slice);
+            // Assume all bytes before the last are non-null
+            for i in 0..slice_length - 1 {
+                kani::assume(buffer[i] != 0);
+            }
 
-        if let Ok(c_str) = result {
-            assert!(c_str.is_safe());
-            // check that the byte slice without the null terminator matches the expected bytes
-            assert_eq!(c_str.to_bytes(), &buffer[..MAX_SIZE - 1]);
-            // check that the byte slice with the null terminator matches the original buffer
-            assert_eq!(c_str.to_bytes_with_nul(), &buffer[..]);
+            // Create the slice up to the current slice_length
+            let slice = &buffer[..slice_length];
+            let result = CStr::from_bytes_with_nul(slice);
+
+            if let Ok(c_str) = result {
+                assert!(c_str.is_safe());
+                assert_eq!(c_str.to_bytes(), &buffer[..slice_length - 1]);
+                assert_eq!(c_str.to_bytes_with_nul(), &buffer[..slice_length]);
+            } 
         }
     }
   
