@@ -1023,7 +1023,7 @@ mod verify {
         }
     }
 
-    Stub for external C strlen
+    // Stub for external C strlen
     #[allow(dead_code)]
     mod stubs {
         use super::*;
