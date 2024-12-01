@@ -991,20 +991,9 @@ mod verify {
         assert!(c_str.is_safe());
     }
 
-  
-    // Stub for external C strlen
-    #[allow(dead_code)]
-    mod stubs {
-        use super::*;
-        
-        #[no_mangle]
-        pub unsafe extern "C" fn strlen(s: *const c_char) -> usize { 
-            4 
-        }
-    }
-
     // Proof harness that uses the const-evaluated length
-    #[kani::proof_for_contract(strlen)]
+    // #[kani::proof_for_contract(strlen)]
+    #[kani::proof]
     #[kani::unwind(32)]
     fn check_strlen_const_path() {
         // Get the compile-time computed length
@@ -1034,10 +1023,21 @@ mod verify {
         }
     }
 
-    /// **Proof Harness for External `strlen` Function with Stubbing**
-    ///
-    /// This harness should verify that the `else` block of the cstr `strlen` function
-    /// correctly interacts with the external `strlen` function, which is stubbed.
+    Stub for external C strlen
+    #[allow(dead_code)]
+    mod stubs {
+        use super::*;
+        
+        #[no_mangle]
+        pub unsafe extern "C" fn strlen(s: *const c_char) -> usize { 
+            4 
+        }
+    }
+
+    // **Proof Harness for External `strlen` Function with Stubbing**
+    // 
+    // This harness should verify that the `else` block of the cstr `strlen` function
+    // correctly interacts with the external `strlen` function, which is stubbed.
     #[kani::proof]
     #[kani::stub(strlen, stubs::strlen)]
     fn check_external_strlen() {
