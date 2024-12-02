@@ -991,73 +991,35 @@ mod verify {
         assert!(c_str.is_safe());
     }
 
-    // Proof harness that uses the const-evaluated length
-    // #[kani::proof_for_contract(strlen)]
-    #[kani::proof]
+    #[kani::proof_for_contract(super::strlen)]
     #[kani::unwind(32)]
-    fn check_strlen_const_path() {
-        // Get the compile-time computed length
-        const BYTES: &[u8] = b"test\0";
-        const PTR: *const c_char = BYTES.as_ptr() as *const c_char;
-        
-        // This must be evaluated at compile time
-        const COMPUTED_LEN: usize = unsafe { strlen(PTR) };
-        
-        // Verify the const-computed length
-        assert_eq!(COMPUTED_LEN, 4);
-        
-        // Additional compile-time verifications
-        const BYTES1: &[u8] = b"test\0";
-        const PTR1: *const c_char = BYTES1.as_ptr() as *const c_char;
-        
-        // Verify the string properties using the const-computed length
-        unsafe {
-            // These assertions will use the const-computed values
-            assert_eq!(*PTR1.add(COMPUTED_LEN), 0);
-            
-            let mut i = 0;
-            while i < COMPUTED_LEN {
-                assert_ne!(*PTR1.add(i), 0);
-                i += 1;
-            }
-        }
-    }
-
-    // Stub for external C strlen
-    #[allow(dead_code)]
-    mod stubs {
-        use super::*;
-        
-        #[no_mangle]
-        pub unsafe extern "C" fn strlen(s: *const c_char) -> usize { 
-            4 
-        }
-    }
-
-    // **Proof Harness for External `strlen` Function with Stubbing**
-    // 
-    // This harness should verify that the `else` block of the cstr `strlen` function
-    // correctly interacts with the external `strlen` function, which is stubbed.
-    #[kani::proof]
-    #[kani::stub(strlen, stubs::strlen)]
-    fn check_external_strlen() {
+    fn check_strlen_contract() {
         const MAX_SIZE: usize = 32;
         let mut string: [u8; MAX_SIZE] = kani::any();
-        
-        // Generate position for null terminator
-        let nul_position: usize = kani::any_where(|x| *x > 0 && *x < MAX_SIZE);
+        let nul_position: usize = kani::any_where(|x| *x < MAX_SIZE);
         string[nul_position] = 0;
         
         // Ensure no null bytes before nul_position
         for i in 0..nul_position {
             kani::assume(string[i] != 0);
         }
-
+        
         let ptr = string.as_ptr() as *const c_char;
+        
         unsafe {
-            let len = strlen(ptr);
-            // Verify stub returns fixed value 4
-            assert_eq!(len, 4);
+            let len = super::strlen(ptr);
+            
+            // Length must be less than isize::MAX
+            assert!(len < isize::MAX as usize);
+            // Length must equal nul_position
+            assert_eq!(len, nul_position);
+            // no null in between
+            for i in 0..len {
+                assert!(*ptr.add(i) != 0);
+            }
+            // additional checks
+            assert_eq!(*ptr.add(len), 0);
+            assert!(len <= MAX_SIZE - 1);
         }
     }
 }
