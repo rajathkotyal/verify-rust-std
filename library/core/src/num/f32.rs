@@ -19,6 +19,7 @@ use crate::num::FpCategory;
 use crate::panic::const_assert;
 
 use safety::requires;
+use crate::ub_checks::float_to_int_in_range;
 
 #[cfg(kani)]
 use crate::kani;
@@ -1060,7 +1061,7 @@ impl f32 {
     #[stable(feature = "float_approx_unchecked_to", since = "1.44.0")]
     #[inline]
     // is_finite() checks if the given float is neither infinite nor NaN.
-    #[requires(self.is_finite() && kani::float::float_to_int_in_range::<Self, Int>(self))]
+    #[requires(self.is_finite() && float_to_int_in_range::<Self, Int>(self))]
     pub unsafe fn to_int_unchecked<Int>(self) -> Int
     where
         Self: FloatToInt<Int>,
