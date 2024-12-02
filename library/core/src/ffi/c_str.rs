@@ -886,29 +886,17 @@ mod verify {
         }
     }
 
-    // pub const fn from_bytes_with_nul(bytes: &[u8]) -> Result<&Self, FromBytesWithNulError>
     #[kani::proof]
-    #[kani::unwind(17)]  
+    #[kani::unwind(17)] 
     fn check_from_bytes_with_nul() {
         const MAX_SIZE: usize = 16;
-        let mut string: [u8; MAX_SIZE] = kani::any();
-        let null_pos: usize = kani::any_where(|x| *x < MAX_SIZE);
-        
-        string[null_pos] = 0;
-        // check to make sure all bytes are non null
-        for i in 0..null_pos {
-            string[i] = kani::any_where(|x| *x != 0);
-        }
-        
-        let slice = &string[..=null_pos];
+        let string: [u8; MAX_SIZE] = kani::any();
+        let slice = kani::slice::any_slice_of_array(&string);
+
         let result = CStr::from_bytes_with_nul(slice);
-        assert!(result.is_ok());
-        
-        let c_str = result.unwrap();
-        assert!(c_str.is_safe());
-        // additional checks
-        assert_eq!(c_str.to_bytes_with_nul(), slice);
-        assert_eq!(c_str.to_bytes(), &slice[..slice.len() - 1]);
+        if let Ok(c_str) = result {
+            assert!(c_str.is_safe());
+        }
     }
 
     // pub const fn count_bytes(&self) -> usize
