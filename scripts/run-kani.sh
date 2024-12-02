@@ -214,6 +214,7 @@ main() {
             -Z function-contracts \
             -Z mem-predicates \
             -Z loop-contracts \
+            -Z float-lib \
             --output-format=terse \
             $command_args \
             --enable-unstable \
