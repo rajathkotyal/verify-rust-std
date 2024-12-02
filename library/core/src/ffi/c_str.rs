@@ -766,13 +766,19 @@ impl AsRef<CStr> for CStr {
 // - null terminator must be within isize::MAX bytes from ptr
 #[requires(!ptr.is_null() && {
     let mut found_null = false;
+    let mut valid = true;
     for i in 0..isize::MAX as usize {
         if unsafe { *ptr.add(i) } == 0 {
+            if found_null {
+                // Already found a null before, so this is an extra null
+                valid = false;
+                break;
+            }
             found_null = true;
             break;
         }
     }
-    found_null
+    found_null && valid
 })]
 // Postconditions:
 // - Returns length before null terminator
@@ -994,6 +1000,7 @@ mod verify {
         assert!(c_str.is_safe());
     }
 
+    // const unsafe fn strlen(ptr: *const c_char) -> usize
     #[kani::proof_for_contract(super::strlen)]
     #[kani::unwind(32)]
     fn check_strlen_contract() {
