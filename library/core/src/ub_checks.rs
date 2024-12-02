@@ -224,7 +224,7 @@ mod predicates {
     /// Check if a float is representable in the given integer type
     pub fn float_to_int_in_range<Float, Int>(value: Float) -> bool
     where
-        Float: FloatToInt<Int> {
+        Float: core::convert::FloatToInt<Int> {
         let _ = value;
         true
     }
@@ -234,7 +234,6 @@ mod predicates {
 mod predicates {
     pub use crate::kani::mem::{can_dereference, can_write, can_read_unaligned, can_write_unaligned,
     same_allocation};
-
     pub use crate::kani::float::float_to_int_in_range;
 }
 
