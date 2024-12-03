@@ -8,11 +8,14 @@ use crate::marker::PhantomData;
 use crate::ptr::NonNull;
 use crate::slice::memchr;
 use crate::{fmt, intrinsics, ops, slice, str};
+use safety::{requires, ensures};
 
 use crate::ub_checks::Invariant;
 
 #[cfg(kani)]
 use crate::kani;
+#[cfg(kani)]
+use crate::ub_checks::can_dereference;
 
 // FIXME: because this is doc(inline)d, we *have* to use intra-doc links because the actual link
 //   depends on where the item is being documented. however, since this is libcore, we can't
@@ -297,7 +300,7 @@ impl CStr {
     #[rustc_const_stable(feature = "const_cstr_from_ptr", since = "1.81.0")]
     // Preconditions:
     // - ptr must be non-null and properly aligned
-    // - ptr must point to a valid null-terminated string within isize::MAX bytes
+    // - ptr must point to a valid nul-terminated string within isize::MAX bytes
     // - memory range must be valid for reads
     #[requires(!ptr.is_null() && {
         let mut next = ptr;
