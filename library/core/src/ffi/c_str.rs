@@ -8,7 +8,7 @@ use crate::iter::FusedIterator;
 use crate::marker::PhantomData;
 use crate::ptr::NonNull;
 use crate::slice::memchr;
-use crate::{fmt, intrinsics, ops, slice, str};
+use crate::{fmt, ops, slice, str};
 use safety::{requires, ensures};
 
 use crate::ub_checks::Invariant;
