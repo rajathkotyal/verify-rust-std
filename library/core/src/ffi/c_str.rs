@@ -15,6 +15,8 @@ use safety::{requires, ensures};
 
 #[cfg(kani)]
 use crate::kani;
+#[cfg(kani)]
+use crate::ub_checks::can_dereference;
 
 // FIXME: because this is doc(inline)d, we *have* to use intra-doc links because the actual link
 //   depends on where the item is being documented. however, since this is libcore, we can't
@@ -761,37 +763,28 @@ impl AsRef<CStr> for CStr {
 #[cfg_attr(bootstrap, rustc_const_stable(feature = "const_cstr_from_ptr", since = "1.81.0"))]
 #[rustc_allow_const_fn_unstable(const_eval_select)]
 // Preconditions:
-// - ptr must be non-null
-// - ptr must point to a valid null-terminated string
-// - null terminator must be within isize::MAX bytes from ptr
+// - ptr must be non-null and properly aligned
+// - ptr must point to a valid null-terminated string within isize::MAX bytes
 #[requires(!ptr.is_null() && {
+    let mut next = ptr;
     let mut found_null = false;
-    let mut valid = true;
-    for i in 0..isize::MAX as usize {
-        if unsafe { *ptr.add(i) } == 0 {
-            if found_null {
-                // Already found a null before, so this is an extra null
-                valid = false;
-                break;
-            }
+    while can_dereference(next) {
+        if unsafe { *next == 0 } {
             found_null = true;
             break;
         }
+        next = next.wrapping_add(1);
     }
-    found_null && valid
+    found_null
 })]
 // Postconditions:
 // - Returns length before null terminator
 // - Length must be less than isize::MAX
-#[ensures(|&result| result < isize::MAX as usize && {
-    let mut valid = true;
-    for i in 0..result {
-        if unsafe { *ptr.add(i) } == 0 {
-            valid = false;
-            break;
-        }
-    }
-    valid && unsafe { *ptr.add(result) } == 0
+// - No null bytes before returned length
+#[ensures(|&result| result < isize::MAX as usize && unsafe {
+    let slice = core::slice::from_raw_parts(ptr, result + 1);
+    // Check no nulls before result and null at result
+    !slice[..result].contains(&0) && slice[result] == 0
 })]
 const unsafe fn strlen(ptr: *const c_char) -> usize {
     const_eval_select!(
