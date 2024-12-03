@@ -295,6 +295,31 @@ impl CStr {
     #[must_use]
     #[stable(feature = "rust1", since = "1.0.0")]
     #[rustc_const_stable(feature = "const_cstr_from_ptr", since = "1.81.0")]
+    // Preconditions:
+    // - ptr must be non-null and properly aligned
+    // - ptr must point to a valid null-terminated string within isize::MAX bytes
+    // - memory range must be valid for reads
+    #[requires(!ptr.is_null() && {
+        let mut next = ptr;
+        let mut found_null = false;
+        while can_dereference(next) {
+            if unsafe { *next == 0 } {
+                found_null = true;
+                break;
+            }
+            next = next.wrapping_add(1);
+        }
+        found_null
+    })]
+    // Postconditions:
+    // - Returns a valid CStr that satisfies its invariants
+    // - The returned CStr points to the same memory as input ptr
+    // - The length matches strlen
+    #[ensures(|result: &&CStr| {
+        result.is_safe() && // CStr invariant
+        core::ptr::eq(result.as_ptr(), ptr) && // Points to same memory
+        unsafe { result.count_bytes() == strlen(ptr) } // Correct length
+    })]
     pub const unsafe fn from_ptr<'a>(ptr: *const c_char) -> &'a CStr {
         // SAFETY: The caller has provided a pointer that points to a valid C
         // string with a NUL terminator less than `isize::MAX` from `ptr`.
@@ -897,5 +922,37 @@ mod verify {
         let c_str = CStr::from_bytes_until_nul(&bytes).unwrap();
         // Verify that count_bytes matches the adjusted length
         assert_eq!(c_str.count_bytes(), len);
+    }
+
+    #[kani::proof_for_contract(CStr::from_ptr)]
+    #[kani::unwind(32)]
+    fn check_from_ptr_contract() {
+        const MAX_SIZE: usize = 32;
+        let mut string: [u8; MAX_SIZE] = kani::any();
+        let nul_position: usize = kani::any_where(|x| *x < MAX_SIZE);
+        
+        // Create valid null-terminated string
+        string[nul_position] = 0;
+        // Ensure no null bytes before nul_position
+        for i in 0..nul_position {
+            kani::assume(string[i] != 0);
+        }
+        
+        let ptr = string.as_ptr() as *const c_char;
+        
+        unsafe {
+            let cstr = CStr::from_ptr(ptr);
+            
+            // Verify postconditions
+            assert!(cstr.is_safe());
+            assert!(core::ptr::eq(cstr.as_ptr(), ptr));
+            assert_eq!(cstr.count_bytes(), nul_position);
+            
+            // Additional safety checks
+            let bytes = cstr.to_bytes_with_nul();
+            assert_eq!(bytes.len(), nul_position + 1);
+            assert_eq!(bytes[nul_position], 0);
+            assert!(!bytes[..nul_position].contains(&0));
+        }
     }
 }
