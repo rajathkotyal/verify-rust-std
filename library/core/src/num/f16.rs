@@ -18,10 +18,12 @@ use crate::mem;
 use crate::num::FpCategory;
 use crate::panic::const_assert;
 use safety::requires;
-use crate::ub_checks::float_to_int_in_range;
 
 #[cfg(kani)]
 use crate::kani;
+
+#[cfg(kani)]
+use crate::ub_checks::float_to_int_in_range;
 /// Basic mathematical constants.
 #[unstable(feature = "f16", issue = "116909")]
 pub mod consts {
