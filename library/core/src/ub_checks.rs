@@ -2,7 +2,6 @@
 //! common preconditions.
 
 use crate::intrinsics::{self, const_eval_select};
-use crate::convert::FloatToInt;
 
 /// Checks that the preconditions of an unsafe function are followed.
 ///
@@ -224,7 +223,8 @@ mod predicates {
     /// Check if a float is representable in the given integer type
     pub fn float_to_int_in_range<Float, Int>(value: Float) -> bool
     where
-        Float: core::convert::FloatToInt<Int> {
+        Float: core::convert::FloatToInt<Int>
+    {
         let _ = value;
         true
     }
