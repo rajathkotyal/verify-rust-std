@@ -22,7 +22,7 @@ use safety::requires;
 #[cfg(kani)]
 use crate::kani;
 
-#[cfg(kani)]
+#[allow(unused_imports)]
 use crate::ub_checks::float_to_int_in_range;
 /// Basic mathematical constants.
 #[unstable(feature = "f128", issue = "116909")]
