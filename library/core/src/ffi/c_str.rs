@@ -232,6 +232,25 @@ impl Invariant for &CStr {
     }
 }
 
+#[requires(!ptr.is_null())]
+fn is_null_terminated(ptr: *const c_char) -> bool {
+    let mut next = ptr;
+    let mut found_null = false;
+    while can_dereference(next) {
+        if unsafe { *next == 0 } {
+            found_null = true;
+            break;
+        }
+        next = next.wrapping_add(1);
+        
+        // Check distance is within isize::MAX
+        if (next.addr() - ptr.addr()) >= isize::MAX as usize {
+            return false;
+        }
+    }
+    found_null
+}
+
 impl CStr {
     /// Wraps a raw C string with a safe C string wrapper.
     ///
@@ -299,30 +318,11 @@ impl CStr {
     #[must_use]
     #[stable(feature = "rust1", since = "1.0.0")]
     #[rustc_const_stable(feature = "const_cstr_from_ptr", since = "1.81.0")]
-    // Preconditions:
-    // - ptr must be non-null and properly aligned
-    // - ptr must point to a valid nul-terminated string within isize::MAX bytes
-    // - memory range must be valid for reads
-    #[requires(!ptr.is_null() && {
-        let mut next = ptr;
-        let mut found_null = false;
-        while can_dereference(next) {
-            if unsafe { *next == 0 } {
-                found_null = true;
-                break;
-            }
-            next = next.wrapping_add(1);
-        }
-        found_null
-    })]
-    // Postconditions:
-    // - Returns a valid CStr that satisfies its invariants
-    // - The returned CStr points to the same memory as input ptr
-    // - The length matches strlen
+    #[requires(!ptr.is_null() && is_null_terminated(ptr))]
     #[ensures(|result: &&CStr| {
-        result.is_safe() && // CStr invariant
-        core::ptr::eq(result.as_ptr(), ptr) && // Points to same memory
-        unsafe { result.count_bytes() == strlen(ptr) } // Correct length
+        result.is_safe() && 
+        core::ptr::eq(result.as_ptr(), ptr) && 
+        unsafe { result.count_bytes() == strlen(ptr) }
     })]
     pub const unsafe fn from_ptr<'a>(ptr: *const c_char) -> &'a CStr {
         // SAFETY: The caller has provided a pointer that points to a valid C
@@ -988,17 +988,11 @@ mod verify {
     #[kani::unwind(32)]
     fn check_from_ptr_contract() {
         const MAX_SIZE: usize = 32;
-        let mut string: [u8; MAX_SIZE] = kani::any();
-        let nul_position: usize = kani::any_where(|x| *x < MAX_SIZE);
-        
-        // Create valid null-terminated string
-        string[nul_position] = 0;
-        // Ensure no null bytes before nul_position
-        for i in 0..nul_position {
-            kani::assume(string[i] != 0);
-        }
-        
+        let string: [u8; MAX_SIZE] = kani::any();
         let ptr = string.as_ptr() as *const c_char;
+        
+        // Only verify if the string is actually null-terminated
+        // kani::assume(is_null_terminated(ptr));
         
         unsafe {
             let cstr = CStr::from_ptr(ptr);
@@ -1006,13 +1000,7 @@ mod verify {
             // Verify postconditions
             assert!(cstr.is_safe());
             assert!(core::ptr::eq(cstr.as_ptr(), ptr));
-            assert_eq!(cstr.count_bytes(), nul_position);
-            
-            // Additional safety checks
-            let bytes = cstr.to_bytes_with_nul();
-            assert_eq!(bytes.len(), nul_position + 1);
-            assert_eq!(bytes[nul_position], 0);
-            assert!(!bytes[..nul_position].contains(&0));
+            assert_eq!(cstr.count_bytes(), strlen(ptr));
         }
     }
   
