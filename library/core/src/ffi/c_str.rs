@@ -242,11 +242,10 @@ fn is_null_terminated(ptr: *const c_char) -> bool {
             break;
         }
         next = next.wrapping_add(1);
-        
-        // Check distance is within isize::MAX
-        if (next.addr() - ptr.addr()) >= isize::MAX as usize {
-            return false;
-        }
+    }
+    // Check distance is within isize::MAX
+    if (next.addr() - ptr.addr()) >= isize::MAX as usize {
+        return false;
     }
     found_null
 }
@@ -1047,15 +1046,12 @@ mod verify {
     }
 
     #[kani::proof_for_contract(CStr::from_ptr)]
-    #[kani::unwind(32)]
+    #[kani::unwind(33)]
     fn check_from_ptr_contract() {
         const MAX_SIZE: usize = 32;
         let string: [u8; MAX_SIZE] = kani::any();
         let ptr = string.as_ptr() as *const c_char;
-        
-        // Only verify if the string is actually null-terminated
-        // kani::assume(is_null_terminated(ptr));
-        
+
         unsafe {
             let cstr = CStr::from_ptr(ptr);
             
