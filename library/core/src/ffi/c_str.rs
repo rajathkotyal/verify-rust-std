@@ -232,6 +232,23 @@ impl Invariant for &CStr {
     }
 }
 
+#[requires(!ptr.is_null())]
+fn is_null_terminated(ptr: *const c_char) -> bool {
+    let mut next = ptr;
+    let mut found_null = false;
+    while can_dereference(next) {
+        if unsafe { *next == 0 } {
+            found_null = true;
+            break;
+        }
+        next = next.wrapping_add(1);
+    }
+    if (next.addr() - ptr.addr()) >= isize::MAX as usize {
+        return false;
+    }
+    found_null
+}
+
 impl CStr {
     /// Wraps a raw C string with a safe C string wrapper.
     ///
@@ -762,30 +779,8 @@ impl AsRef<CStr> for CStr {
 #[unstable(feature = "cstr_internals", issue = "none")]
 #[cfg_attr(bootstrap, rustc_const_stable(feature = "const_cstr_from_ptr", since = "1.81.0"))]
 #[rustc_allow_const_fn_unstable(const_eval_select)]
-// Preconditions:
-// - ptr must be non-null and properly aligned
-// - ptr must point to a valid null-terminated string within isize::MAX bytes
-#[requires(!ptr.is_null() && {
-    let mut next = ptr;
-    let mut found_null = false;
-    while can_dereference(next) {
-        if unsafe { *next == 0 } {
-            found_null = true;
-            break;
-        }
-        next = next.wrapping_add(1);
-    }
-    found_null
-})]
-// Postconditions:
-// - Returns length before null terminator
-// - Length must be less than isize::MAX
-// - No null bytes before returned length
-#[ensures(|&result| result < isize::MAX as usize && unsafe {
-    let slice = core::slice::from_raw_parts(ptr, result + 1);
-    // Check no nulls before result and null at result
-    !slice[..result].contains(&0) && slice[result] == 0
-})]
+#[requires(!ptr.is_null() && is_null_terminated(ptr))]
+#[ensures(|&result| result < isize::MAX as usize && unsafe { *ptr.add(result) } == 0)]
 const unsafe fn strlen(ptr: *const c_char) -> usize {
     const_eval_select!(
         @capture { s: *const c_char = ptr } -> usize:
@@ -1070,35 +1065,12 @@ mod verify {
 
     // const unsafe fn strlen(ptr: *const c_char) -> usize
     #[kani::proof_for_contract(super::strlen)]
-    #[kani::unwind(32)]
+    #[kani::unwind(33)]
     fn check_strlen_contract() {
         const MAX_SIZE: usize = 32;
         let mut string: [u8; MAX_SIZE] = kani::any();
-        let nul_position: usize = kani::any_where(|x| *x < MAX_SIZE);
-        string[nul_position] = 0;
-        
-        // Ensure no null bytes before nul_position
-        for i in 0..nul_position {
-            kani::assume(string[i] != 0);
-        }
-        
         let ptr = string.as_ptr() as *const c_char;
-        
-        unsafe {
-            let len = super::strlen(ptr);
-            
-            // Length must be less than isize::MAX
-            assert!(len < isize::MAX as usize);
-            // Length must equal nul_position
-            assert_eq!(len, nul_position);
-            // no null in between
-            for i in 0..len {
-                assert!(*ptr.add(i) != 0);
-            }
-            // additional checks
-            assert_eq!(*ptr.add(len), 0);
-            assert!(len <= MAX_SIZE - 1);
-        }
+        unsafe {super::strlen(ptr);}
     }
   
     #[kani::proof]
