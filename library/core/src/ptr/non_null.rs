@@ -353,6 +353,8 @@ impl<T: ?Sized> NonNull<T> {
     #[rustc_never_returns_null_ptr]
     #[must_use]
     #[inline(always)]
+    //Ensures address of resulting pointer is same as original
+    #[ensures(|result: &*mut T| *result == self.pointer as *mut T)]
     pub const fn as_ptr(self) -> *mut T {
         self.pointer as *mut T
     }
@@ -454,6 +456,8 @@ impl<T: ?Sized> NonNull<T> {
     #[must_use = "this returns the result of the operation, \
                   without modifying the original"]
     #[inline]
+    // Address preservation
+    #[ensures(|result: &NonNull<U>| result.as_ptr().addr() == self.as_ptr().addr())]
     pub const fn cast<U>(self) -> NonNull<U> {
         // SAFETY: `self` is a `NonNull` pointer which is necessarily non-null
         unsafe { NonNull { pointer: self.as_ptr() as *mut U } }
@@ -526,6 +530,11 @@ impl<T: ?Sized> NonNull<T> {
     #[cfg_attr(miri, track_caller)] // even without panics, this helps for Miri backtraces
     #[stable(feature = "non_null_convenience", since = "1.80.0")]
     #[rustc_const_stable(feature = "non_null_convenience", since = "1.80.0")]
+    #[requires(
+        (self.as_ptr().addr() as isize).checked_add(count).is_some() &&
+        kani::mem::same_allocation(self.as_ptr(), self.as_ptr().wrapping_byte_offset(count))
+    )]
+    #[ensures(|result: &Self| result.as_ptr() == self.as_ptr().wrapping_byte_offset(count))]
     pub const unsafe fn byte_offset(self, count: isize) -> Self {
         // SAFETY: the caller must uphold the safety contract for `offset` and `byte_offset` has
         // the same safety contract.
@@ -607,6 +616,10 @@ impl<T: ?Sized> NonNull<T> {
     #[cfg_attr(miri, track_caller)] // even without panics, this helps for Miri backtraces
     #[stable(feature = "non_null_convenience", since = "1.80.0")]
     #[rustc_const_stable(feature = "non_null_convenience", since = "1.80.0")]
+    #[requires(
+        count <= (isize::MAX as usize) - self.as_ptr().addr() &&  // Ensure the offset doesn't overflow
+        (count == 0 || kani::mem::same_allocation(self.as_ptr(), self.as_ptr().wrapping_byte_add(count))) // Ensure the offset is within the same allocation
+    )]
     pub const unsafe fn byte_add(self, count: usize) -> Self {
         // SAFETY: the caller must uphold the safety contract for `add` and `byte_add` has the same
         // safety contract.
@@ -820,6 +833,14 @@ impl<T: ?Sized> NonNull<T> {
     #[cfg_attr(miri, track_caller)] // even without panics, this helps for Miri backtraces
     #[stable(feature = "non_null_convenience", since = "1.80.0")]
     #[rustc_const_stable(feature = "non_null_convenience", since = "1.80.0")]
+    #[requires(
+        self.as_ptr().addr() == origin.as_ptr().addr() ||
+        kani::mem::same_allocation(self.as_ptr() as *const(), origin.as_ptr() as *const())
+    )]
+    #[ensures(
+        |result: &isize|
+        *result == (self.as_ptr() as *const u8).offset_from(origin.as_ptr() as *const u8)
+    )]
     pub const unsafe fn byte_offset_from<U: ?Sized>(self, origin: NonNull<U>) -> isize {
         // SAFETY: the caller must uphold the safety contract for `byte_offset_from`.
         unsafe { self.pointer.byte_offset_from(origin.pointer) }
@@ -1453,6 +1474,8 @@ impl<T> NonNull<[T]> {
     #[inline]
     #[must_use]
     #[unstable(feature = "slice_ptr_get", issue = "74265")]
+    // Address preservation
+    #[ensures(|result: &NonNull<T>| result.as_ptr().addr() == self.as_ptr().addr())]
     pub const fn as_non_null_ptr(self) -> NonNull<T> {
         self.cast()
     }
@@ -1472,6 +1495,8 @@ impl<T> NonNull<[T]> {
     #[must_use]
     #[unstable(feature = "slice_ptr_get", issue = "74265")]
     #[rustc_never_returns_null_ptr]
+    // Address preservation
+    #[ensures(|result: &*mut T| *result == self.pointer as *mut T)]
     pub const fn as_mut_ptr(self) -> *mut T {
         self.as_non_null_ptr().as_ptr()
     }
@@ -1736,6 +1761,7 @@ impl<T: ?Sized> From<&T> for NonNull<T> {
 mod verify {
     use super::*;
     use crate::ptr::null_mut;
+    use crate::mem;
     use kani::PointerGenerator;
 
     trait SampleTrait {
@@ -2168,6 +2194,42 @@ mod verify {
         }
     }
 
+    #[kani::proof_for_contract(NonNull::as_ptr)]
+    pub fn non_null_check_as_ptr() {
+        // Create a non-null pointer to a random value
+        let non_null_ptr: *mut i32 = kani::any::<usize>() as *mut i32;
+        if let Some(ptr) = NonNull::new(non_null_ptr) {
+            let result = ptr.as_ptr();
+        }
+    
+    }
+    
+    #[kani::proof_for_contract(NonNull::<[T]>::as_mut_ptr)]
+    pub fn non_null_check_as_mut_ptr() {
+        const ARR_LEN: usize = 100;
+        let mut values: [i32; ARR_LEN] = kani::any();
+        let slice = kani::slice::any_slice_of_array_mut(&mut values);
+        let non_null_ptr = NonNull::new(slice as *mut [i32]).unwrap();
+        let result = non_null_ptr.as_mut_ptr();
+    }
+    #[kani::proof_for_contract(NonNull::<T>::cast)]
+    pub fn non_null_check_cast() {
+        // Create a non-null pointer to a random value
+        let non_null_ptr: *mut i32 = kani::any::<usize>() as *mut i32;
+        if let Some(ptr) = NonNull::new(non_null_ptr) {
+            let result: NonNull<u8> = ptr.cast();
+        }
+    }
+    
+    #[kani::proof_for_contract(NonNull::<[T]>::as_non_null_ptr)]
+    pub fn non_null_check_as_non_null_ptr() {
+        const ARR_LEN: usize = 100;
+        let mut values: [i32; ARR_LEN] = kani::any();
+        let slice = kani::slice::any_slice_of_array_mut(&mut values);
+        let non_null_ptr = NonNull::new(slice as *mut [i32]).unwrap();
+        let result = non_null_ptr.as_non_null_ptr();
+     } 
+  
     #[kani::proof]
     pub fn non_null_check_len() {
         // Create a non-deterministic NonNull pointer using kani::any()
@@ -2345,4 +2407,72 @@ mod verify {
     generate_write_volatile_harness!(usize, {core::mem::size_of::<usize>()}, non_null_check_write_volatile_usize);
     generate_write_volatile_harness!((), 1, non_null_check_write_volatile_unit);
 
+    #[kani::proof_for_contract(NonNull::byte_add)]
+    pub fn non_null_byte_add_proof() {
+        // Make size as 1000 to ensure the array is large enough to cover various senarios
+        // while maintaining a reasonable proof runtime
+        const ARR_SIZE: usize = mem::size_of::<i32>() * 1000;
+        let mut generator = PointerGenerator::<ARR_SIZE>::new();
+
+        let count: usize = kani::any();
+        let raw_ptr: *mut i32 = generator.any_in_bounds().ptr as *mut i32;
+
+        unsafe {
+            let ptr = NonNull::new(raw_ptr).unwrap();
+            let result = ptr.byte_add(count);
+        }
+    }
+
+    #[kani::proof_for_contract(NonNull::byte_add)]
+    pub fn non_null_byte_add_dangling_proof() {
+        let ptr = NonNull::<i32>::dangling();
+        unsafe {
+            let _ = ptr.byte_add(0);
+        }
+    }
+
+    #[kani::proof_for_contract(NonNull::byte_offset)]
+    pub fn non_null_byte_offset_proof() {
+        const ARR_SIZE: usize = mem::size_of::<i32>() * 1000;
+        let mut generator = PointerGenerator::<ARR_SIZE>::new();
+
+        let count: isize = kani::any();
+        let raw_ptr: *mut i32 = generator.any_in_bounds().ptr as *mut i32;
+
+        unsafe {
+            let ptr = NonNull::new(raw_ptr).unwrap();
+            let result = ptr.byte_offset(count);
+        }
+    }
+
+    #[kani::proof_for_contract(NonNull::byte_offset_from)]
+    pub fn non_null_byte_offset_from_proof() {
+        const SIZE: usize = mem::size_of::<i32>() * 1000;
+        let mut generator1 = PointerGenerator::<SIZE>::new();
+        let mut generator2 = PointerGenerator::<SIZE>::new();
+
+        let ptr: *mut i32 = generator1.any_in_bounds().ptr as *mut i32;
+
+        let origin: *mut i32 = if kani::any() {
+            generator1.any_in_bounds().ptr as *mut i32
+        } else {
+            generator2.any_in_bounds().ptr as *mut i32
+        };
+
+        let ptr_nonnull = unsafe { NonNull::new(ptr).unwrap() };
+        let origin_nonnull = unsafe { NonNull::new(origin).unwrap() };
+
+        unsafe {
+            let result = ptr_nonnull.byte_offset_from(origin_nonnull);
+        }
+    }
+
+    #[kani::proof_for_contract(NonNull::byte_offset_from)]
+    pub fn non_null_byte_offset_from_dangling_proof() {
+        let origin = NonNull::<i32>::dangling();
+        let ptr = origin;
+        unsafe {
+            let _ = ptr.byte_offset_from(origin);
+        }
+    }
 }
