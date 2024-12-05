@@ -934,6 +934,7 @@ mod verify {
         let bytes = c_str.to_bytes();
         let len = bytes.len();
         assert_eq!(bytes, &slice[..len]);
+    }
       
     // pub fn bytes(&self) -> Bytes<'_>
     #[kani::proof]
@@ -1112,5 +1113,5 @@ mod verify {
         let expected_is_empty = bytes.len() == 0;
         assert_eq!(expected_is_empty, c_str.is_empty());
         assert!(c_str.is_safe());
-  }
+    }
 }
