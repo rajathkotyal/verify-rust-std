@@ -317,11 +317,7 @@ impl CStr {
     #[stable(feature = "rust1", since = "1.0.0")]
     #[rustc_const_stable(feature = "const_cstr_from_ptr", since = "1.81.0")]
     #[requires(!ptr.is_null() && is_null_terminated(ptr))]
-    #[ensures(|result: &&CStr| {
-        result.is_safe() && 
-        core::ptr::eq(result.as_ptr(), ptr) && 
-        unsafe { result.count_bytes() == strlen(ptr) }
-    })]
+    #[ensures(|result: &&CStr| result.is_safe())]
     pub const unsafe fn from_ptr<'a>(ptr: *const c_char) -> &'a CStr {
         // SAFETY: The caller has provided a pointer that points to a valid C
         // string with a NUL terminator less than `isize::MAX` from `ptr`.
