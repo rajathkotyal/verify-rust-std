@@ -11,12 +11,11 @@ use crate::slice::memchr;
 use crate::{fmt, ops, slice, str};
 
 use crate::ub_checks::Invariant;
+use crate::ub_checks::can_dereference;
 use safety::{requires, ensures};
 
 #[cfg(kani)]
 use crate::kani;
-#[cfg(kani)]
-use crate::ub_checks::can_dereference;
 
 // FIXME: because this is doc(inline)d, we *have* to use intra-doc links because the actual link
 //   depends on where the item is being documented. however, since this is libcore, we can't
@@ -1070,7 +1069,8 @@ mod verify {
         const MAX_SIZE: usize = 32;
         let mut string: [u8; MAX_SIZE] = kani::any();
         let ptr = string.as_ptr() as *const c_char;
-        unsafe {super::strlen(ptr);}
+
+        unsafe { super::strlen(ptr); }
     }
   
     #[kani::proof]
