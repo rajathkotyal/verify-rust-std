@@ -12,11 +12,10 @@ use crate::{fmt, ops, slice, str};
 use safety::{requires, ensures};
 
 use crate::ub_checks::Invariant;
+use crate::ub_checks::can_dereference;
 
 #[cfg(kani)]
 use crate::kani;
-#[cfg(kani)]
-use crate::ub_checks::can_dereference;
 
 // FIXME: because this is doc(inline)d, we *have* to use intra-doc links because the actual link
 //   depends on where the item is being documented. however, since this is libcore, we can't
@@ -232,6 +231,7 @@ impl Invariant for &CStr {
     }
 }
 
+// Helper function
 #[requires(!ptr.is_null())]
 fn is_null_terminated(ptr: *const c_char) -> bool {
     let mut next = ptr;
@@ -1047,7 +1047,7 @@ mod verify {
         let string: [u8; MAX_SIZE] = kani::any();
         let ptr = string.as_ptr() as *const c_char;
 
-        unsafe {CStr::from_ptr(ptr);}
+        unsafe { CStr::from_ptr(ptr); }
     }
   
     #[kani::proof]
