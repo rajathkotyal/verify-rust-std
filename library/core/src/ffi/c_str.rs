@@ -11,6 +11,7 @@ use crate::slice::memchr;
 use crate::{fmt, ops, slice, str};
 
 use crate::ub_checks::Invariant;
+#[allow(unused_imports)]
 use crate::ub_checks::can_dereference;
 use safety::{requires, ensures};
 
