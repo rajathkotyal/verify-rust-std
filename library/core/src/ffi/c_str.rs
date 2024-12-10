@@ -231,6 +231,7 @@ impl Invariant for &CStr {
     }
 }
 
+#[cfg(kani)]
 #[requires(!ptr.is_null())]
 fn is_null_terminated(ptr: *const c_char) -> bool {
     let mut next = ptr;
