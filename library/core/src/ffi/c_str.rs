@@ -12,6 +12,7 @@ use crate::{fmt, ops, slice, str};
 use safety::{requires, ensures};
 
 use crate::ub_checks::Invariant;
+#[allow(unused_imports)]
 use crate::ub_checks::can_dereference;
 
 #[cfg(kani)]
