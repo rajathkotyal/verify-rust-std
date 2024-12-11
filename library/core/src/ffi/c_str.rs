@@ -9,11 +9,11 @@ use crate::marker::PhantomData;
 use crate::ptr::NonNull;
 use crate::slice::memchr;
 use crate::{fmt, ops, slice, str};
+use safety::{requires, ensures};
 
 use crate::ub_checks::Invariant;
 #[allow(unused_imports)]
 use crate::ub_checks::can_dereference;
-use safety::{requires, ensures};
 
 #[cfg(kani)]
 use crate::kani;
@@ -232,6 +232,8 @@ impl Invariant for &CStr {
     }
 }
 
+
+// Helper function
 #[cfg(kani)]
 #[requires(!ptr.is_null())]
 fn is_null_terminated(ptr: *const c_char) -> bool {
@@ -317,6 +319,8 @@ impl CStr {
     #[must_use]
     #[stable(feature = "rust1", since = "1.0.0")]
     #[rustc_const_stable(feature = "const_cstr_from_ptr", since = "1.81.0")]
+    #[requires(!ptr.is_null() && is_null_terminated(ptr))]
+    #[ensures(|result: &&CStr| result.is_safe())]
     pub const unsafe fn from_ptr<'a>(ptr: *const c_char) -> &'a CStr {
         // SAFETY: The caller has provided a pointer that points to a valid C
         // string with a NUL terminator less than `isize::MAX` from `ptr`.
@@ -1073,6 +1077,16 @@ mod verify {
         let ptr = string.as_ptr() as *const c_char;
 
         unsafe { super::strlen(ptr); }
+    }
+
+    #[kani::proof_for_contract(CStr::from_ptr)]
+    #[kani::unwind(33)]
+    fn check_from_ptr_contract() {
+        const MAX_SIZE: usize = 32;
+        let string: [u8; MAX_SIZE] = kani::any();
+        let ptr = string.as_ptr() as *const c_char;
+
+        unsafe { CStr::from_ptr(ptr); }
     }
   
     #[kani::proof]
