@@ -232,7 +232,6 @@ impl Invariant for &CStr {
     }
 }
 
-
 // Helper function
 #[cfg(kani)]
 #[requires(!ptr.is_null())]
@@ -901,7 +900,7 @@ mod verify {
         c_str
     }
 
-    // Proof harness for pub const fn from_bytes_until_nul(bytes: &[u8]) -> Result<&CStr, FromBytesUntilNulError> 
+    // pub const fn from_bytes_until_nul(bytes: &[u8]) -> Result<&CStr, FromBytesUntilNulError> 
     #[kani::proof]
     #[kani::unwind(32)] // 7.3 seconds when 16; 33.1 seconds when 32
     fn check_from_bytes_until_nul() {
@@ -998,6 +997,7 @@ mod verify {
         assert!(c_str.is_safe());
     }
   
+    // pub const fn from_bytes_with_nul(bytes: &[u8]) -> Result<&Self, FromBytesWithNulError>
     #[kani::proof]
     #[kani::unwind(17)] 
     fn check_from_bytes_with_nul() {
@@ -1079,6 +1079,7 @@ mod verify {
         unsafe { super::strlen(ptr); }
     }
 
+    // pub const unsafe fn from_ptr<'a>(ptr: *const c_char) -> &'a CStr
     #[kani::proof_for_contract(CStr::from_ptr)]
     #[kani::unwind(33)]
     fn check_from_ptr_contract() {
@@ -1089,6 +1090,7 @@ mod verify {
         unsafe { CStr::from_ptr(ptr); }
     }
   
+    // pub const fn is_empty(&self) -> bool
     #[kani::proof]
     #[kani::unwind(33)]
     fn check_is_empty() {
